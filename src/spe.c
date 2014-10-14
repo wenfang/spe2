@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     speOptCreate(cycle.confFile);
   }
   // get module number
-  int speModuleNum;
+  int speModuleNum = 0;
   for (int i = 0; speModules[i] != NULL; i++) {
     speModules[i]->index = i;
     speModuleNum++;

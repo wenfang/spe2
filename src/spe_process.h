@@ -2,6 +2,6 @@
 #define __SPE_PROCESS_H
 
 extern int
-SpeProcessSpawn(unsigned procs);
+SpeProcessSpawn(unsigned procNum);
 
 #endif

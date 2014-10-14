@@ -7,6 +7,12 @@
 
 bool speWorkerStop;
 
+static void workerControl(int *fd) {
+  int cfd = *fd;
+  int msg = 0;
+  read(cfd, &msg, sizeof(msg));
+}
+
 void
 SpeWorkerProcess() {
   for (int i = 0; speModules[i] != NULL; i++) {

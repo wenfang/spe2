@@ -62,7 +62,7 @@ extern int
 SpeStringReadAppend(int fd, SpeString_t* str, unsigned len);
 
 extern SpeString_t* 
-SpeStringCreate(unsigned defaultSize);
+SpeStringCreate(unsigned size);
 
 extern void
 SpeStringDestroy(SpeString_t* str);
