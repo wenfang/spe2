@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
   }
   if (argc == 2) {
     cycle.confFile = argv[1];
-    speOptCreate(cycle.confFile);
+    SpeOptCreate(cycle.confFile);
   }
   // get module number
   int speModuleNum = 0;
@@ -88,6 +88,6 @@ int main(int argc, char* argv[]) {
   }
 
   SpeCycleDestroy(&cycle);
-  speOptDestroy();
+  SpeOptDestroy();
   return 0;
 }

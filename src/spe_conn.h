@@ -44,24 +44,10 @@ extern bool
 SpeConnReaduntil(SpeConn_t* conn, char* delim);
 
 static inline bool
-SpeConnWrite(SpeConn_t* conn, SpeString_t* buf) {
-  ASSERT(conn && buf);
-  if (conn->Closed || conn->Error) return false;
-  return SpeStringCatb(conn->writeBuffer, buf->data, buf->len);
-}
-
-static inline bool
-SpeConnWriteb(SpeConn_t* conn, char* buf, unsigned len) {
+SpeConnWrite(SpeConn_t* conn, char* buf, unsigned len) {
   ASSERT(conn && buf && len);
   if (conn->Closed || conn->Error) return false;
   return SpeStringCatb(conn->writeBuffer, buf, len);
-}
-
-static inline bool
-SpeConnWrites(SpeConn_t* conn, char* buf) {
-  ASSERT(conn && buf);
-  if (conn->Closed || conn->Error) return false;
-  return SpeStringCatb(conn->writeBuffer, buf, strlen(buf));
 }
 
 extern bool
