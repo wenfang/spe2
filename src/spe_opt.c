@@ -11,24 +11,24 @@
 #define KEY_MAXLEN  16
 #define VAL_MAXLEN  128
 
-struct speOpt_s {
+struct SpeOpt_s {
 	char              sec[SEC_MAXLEN];
  	char              key[KEY_MAXLEN];
 	char              val[VAL_MAXLEN];      // string value
 	struct list_head  node;
 };
-typedef struct speOpt_s speOpt_t;
+typedef struct SpeOpt_s SpeOpt_t;
 
 static LIST_HEAD(options);
 
 /*
 ===================================================================================================
-speOptSet
+SpeOptSet
 ===================================================================================================
 */
 static bool 
-speOptSet(char* sec, char* key, char* val) {
-  speOpt_t* opt = calloc (1, sizeof(speOpt_t));
+SpeOptSet(char* sec, char* key, char* val) {
+  SpeOpt_t* opt = calloc (1, sizeof(SpeOpt_t));
   if (!opt) return false;
   // set section and key 
   strncpy(opt->sec, sec, SEC_MAXLEN);
@@ -49,7 +49,7 @@ int
 SpeOptInt(char* section, char* key, int defaultValue) {
   if (!key) return defaultValue;
   if (!section) section = "global";
-  speOpt_t* entry = NULL;
+  SpeOpt_t* entry = NULL;
   list_for_each_entry(entry, &options, node) {
     if (!strcmp(section, entry->sec) && !strcmp(key, entry->key)) {
       return atoi(entry->val);
@@ -67,7 +67,7 @@ const char*
 SpeOptString(char* section, char* key, const char* defaultValue) {
   if (!key) return defaultValue;
   if (!section) section = "global";
-  speOpt_t* entry = NULL;
+  SpeOpt_t* entry = NULL;
   list_for_each_entry(entry, &options, node) {
     if (!strcmp(section, entry->sec) && !strcmp(key, entry->key)) {
       return entry->val;
@@ -78,73 +78,77 @@ SpeOptString(char* section, char* key, const char* defaultValue) {
 
 /*
 ===================================================================================================
-speOptCreate
-    parse conf file
+SpeOptCreate
 ===================================================================================================
 */
 bool 
-speOptCreate(const char* configFile) {
+SpeOptCreate(const char* configFile) {
   char sec[SEC_MAXLEN];
   char key[KEY_MAXLEN];
   char val[VAL_MAXLEN];
 
-  SpeIo_t* io = SpeIoCreate(configFile);
+  speIO_t* io = SpeIOCreate(configFile);
   if (!io) return false;
+  speBuf_t* line = SpeBufCreate();
+  if (!line) return false;
   // set default section
   strcpy(sec, "global");
   while (1) {
     // get one line from file
-    if (SpeIoReaduntil(io, "\n") <= 0) break;
-    SpeString_t* line = io->Buffer;
-    SpeStringStrim(line);
+    SpeIOReaduntil(io, "\n");
+    if (io->Closed || io->Error) break;
+    SpeBufCopy(line, io->ReadBuffer->Data, io->RLen);
+    SpeBufStrim(line);
+    SpeBufLConsume(io->ReadBuffer, io->RLen);
     // ignore empty and comment line
-    if (line->len == 0 || line->data[0] == '#') continue;
+    if (line->Len == 0 || line->Data[0] == '#') continue;
     // section line, get section
-    if (line->data[0] == '[' && line->data[line->len-1] == ']') {
-      SpeStringConsume(line, 1);
-      SpeStringRconsume(line, 1);
-      SpeStringStrim(line);
+    if (line->Data[0] == '[' && line->Data[line->Len-1] == ']') {
+      SpeBufLConsume(line, 1);
+      SpeBufRConsume(line, 1);
+      SpeBufStrim(line);
       // section can't be null
-      if (line->len == 0) {
-        SpeIoDestroy(io);
+      if (line->Len == 0) {
+        SpeBufDestroy(line);
+        SpeIODestroy(io);
         return false;
       }
-      strncpy(sec, line->data, SEC_MAXLEN);
+      strncpy(sec, line->Data, SEC_MAXLEN);
       sec[SEC_MAXLEN-1] = 0;
       continue;
     }
     // split key and value
-    SpeSlist_t* slist = SpeStringSplit(line, "=");
-    if (slist->len != 2) {
-      spe_slist_destroy(slist);
-      SpeIoDestroy(io);
+    speBufList_t* bufList = SpeBufSplit(line, "=");
+    if (bufList->Len != 2) {
+      SpeBufListDestroy(bufList);
+      SpeBufDestroy(line);
+      SpeIODestroy(io);
       return false;
     }
-    SpeString_t* key_str = slist->data[0];
-    SpeStringStrim(key_str);
-    strncpy(key, key_str->data, KEY_MAXLEN);
+    SpeBufStrim(bufList->Data[0]);
+    strncpy(key, bufList->Data[0]->Data, KEY_MAXLEN);
     key[KEY_MAXLEN-1] = 0;
 
-    SpeString_t* val_str = slist->data[1];
-    SpeStringStrim(val_str);
-    strncpy(val, val_str->data, VAL_MAXLEN);
+    SpeBufStrim(bufList->Data[1]);
+    strncpy(val, bufList->Data[1]->Data, VAL_MAXLEN);
     val[VAL_MAXLEN-1] = 0;
-    spe_slist_destroy(slist);
+    SpeBufListDestroy(bufList);
     // set option value
-    speOptSet(sec, key, val);
+    SpeOptSet(sec, key, val);
   }
-  SpeIoDestroy(io);
+  SpeBufDestroy(line);
+  SpeIODestroy(io);
   return true;
 }
 
 /*
 ===================================================================================================
-speOptDestroy
+SpeOptDestroy
 ===================================================================================================
 */
 void
-speOptDestroy() {
-  speOpt_t *entry, *tmp;
+SpeOptDestroy() {
+  SpeOpt_t *entry, *tmp;
   list_for_each_entry_safe(entry, tmp, &options, node) {
     list_del_init(&entry->node);
     free(entry);
