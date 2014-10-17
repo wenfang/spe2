@@ -1,5 +1,6 @@
 #include "spe_test.h"
 #include "spe_server.h"
+#include "spe_worker.h"
 
 static void onClose(SpeConn_t *conn) {
   SpeConnDestroy(conn);

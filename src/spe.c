@@ -26,6 +26,7 @@ SpeMasterProcess() {
         if (wait(&status) == -1) break;
       }
       speReap = 0;
+      exit(0);
     }
   }
 }

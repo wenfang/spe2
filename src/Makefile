@@ -8,7 +8,7 @@ OBJS_OPT = spe_buf.o spe_io.o spe_opt.o spe_opt_test.o
 	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -pthread -Wall -c $< -o $@
 
 all:$(OBJS)
-	gcc $(OBJS) -lpthread -o spe
+	gcc -pg -g $(OBJS) -lpthread -o spe
 
 buf: $(OBJS_BUF)
 	gcc $(OBJS_BUF) -o spe_buf
