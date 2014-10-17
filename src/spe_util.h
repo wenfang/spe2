@@ -47,7 +47,6 @@ SpeSetMaxOpenFiles(unsigned file_num) {
   r.rlim_cur = file_num;
   r.rlim_max = file_num;
   if (setrlimit(RLIMIT_NOFILE, &r) < 0) {
-    SPE_LOG_ERR("setrlimit error: %s", strerror(errno));
     return false;
   }
   return true;
