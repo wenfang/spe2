@@ -15,7 +15,7 @@ static void onRead(SpeConn_t *conn) {
 
 static void process(SpeConn_t *conn) {
   conn->ReadCallback.Handler = SPE_HANDLER1(onRead, conn);
-  SpeConnReaduntil(conn, "\r\n\r\n");
+  SpeConnRead(conn);
 }
 
 static void

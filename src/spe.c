@@ -40,6 +40,7 @@ int main(int argc, char* argv[]) {
     cycle.confFile = argv[1];
     SpeOptCreate(cycle.confFile);
   }
+  SpeSetMaxOpenFiles(1000000);
   // get module number
   int speModuleNum = 0;
   for (int i = 0; speModules[i] != NULL; i++) {

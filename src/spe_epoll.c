@@ -124,7 +124,7 @@ epollInit
 */
 static void
 epollInit(speCycle_t *cycle) {
-  epfd = epoll_create(1024);
+  epfd = epoll_create(10240);
 }
 
 /*

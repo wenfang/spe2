@@ -28,10 +28,7 @@ static void
 serverAccept(void *arg) {
   speServer_t* server = arg;
   int cfd = SpeSockAccept(server->sfd);
-  if (cfd <= 0) {
-    SPE_LOG_ERR("socket accept error");
-    return;
-  }
+  if (cfd <= 0) return;
   if (!server->handler) {
     SPE_LOG_ERR("server no handler set");
     SpeSockClose(cfd);

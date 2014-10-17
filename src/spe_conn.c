@@ -318,7 +318,10 @@ SpeConnCreate
 */
 SpeConn_t*
 SpeConnCreate(unsigned fd) {
-  if (unlikely(fd >= MAX_FD)) return NULL;
+  if (unlikely(fd >= MAX_FD)) {
+    SPE_LOG_ERR("conn overflow");
+    return NULL;
+  }
   SpeSockSetBlock(fd, 0);
   SpeConn_t* conn = &all_conn[fd];
   if (conn->fd == 0 && !connInit(conn, fd)) {
