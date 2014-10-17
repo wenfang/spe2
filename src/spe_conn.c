@@ -149,6 +149,14 @@ SpeConnReaduntil(SpeConn_t* conn, char* delim) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (!delim || conn->Closed || conn->Error) return false;
   // (sync):
+  int res = SpeBufReadAppend(conn->fd, conn->ReadBuffer, BUF_SIZE);
+  if (res < 0 && errno != EINTR && errno != EAGAIN) conn->Error = 1;
+  if (res == 0) conn->Closed = 1;
+  if (conn->Error || conn->Closed) {
+    SpeTaskEnqueue(&conn->ReadCallback);
+    return true;
+  }
+  // check Buffer
   int pos = SpeBufSearch(conn->ReadBuffer, delim);
   if (pos != -1) {
     conn->RLen = pos + strlen(delim);
@@ -177,6 +185,14 @@ SpeConnReadbytes(SpeConn_t* conn, unsigned len) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (len == 0 || conn->Closed || conn->Error ) return false;
   // (sync):
+  int res = SpeBufReadAppend(conn->fd, conn->ReadBuffer, BUF_SIZE);
+  if (res < 0 && errno != EINTR && errno != EAGAIN) conn->Error = 1;
+  if (res == 0) conn->Closed = 1;
+  if (conn->Error || conn->Closed) {
+    SpeTaskEnqueue(&conn->ReadCallback);
+    return true;
+  }
+  // check buffer
   if (len <= conn->ReadBuffer->Len) {
     conn->RLen = len;
     SpeTaskEnqueue(&conn->ReadCallback);
@@ -204,6 +220,14 @@ SpeConnRead(SpeConn_t* conn) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (conn->Closed || conn->Error) return false;
   // (sync):
+  int res = SpeBufReadAppend(conn->fd, conn->ReadBuffer, BUF_SIZE);
+  if (res < 0 && errno != EINTR && errno != EAGAIN) conn->Error = 1;
+  if (res == 0) conn->Closed = 1;
+  if (conn->Error || conn->Closed) {
+    SpeTaskEnqueue(&conn->ReadCallback);
+    return true;
+  }
+  // check buffer
   if (conn->ReadBuffer->Len > 0) {
     conn->RLen = conn->ReadBuffer->Len;
     SpeTaskEnqueue(&conn->ReadCallback);
@@ -264,6 +288,18 @@ bool
 SpeConnFlush(SpeConn_t* conn) {
   ASSERT(conn && conn->writeType == SPE_CONN_WRITENONE);
   if (conn->Closed || conn->Error) return false;
+  int res = write(conn->fd, conn->writeBuffer->Data, conn->writeBuffer->Len);
+  if (res < 0) {
+    if (errno == EPIPE) {
+      conn->Closed = 1;
+    } else {
+      SPE_LOG_ERR("conn write error: %s", strerror(errno));
+      conn->Error = 1;
+    }
+    SpeTaskEnqueue(&conn->WriteCallback);
+    return true;
+  }
+  SpeBufLConsume(conn->writeBuffer, res);
   if (conn->writeBuffer->Len == 0) {
     SpeTaskEnqueue(&conn->WriteCallback);
     return true;
