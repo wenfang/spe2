@@ -7,7 +7,7 @@ static void onClose(SpeConn_t *conn) {
 }
 
 static void onRead(SpeConn_t *conn) {
-  char* str = "OK\r\n";
+  char* str = "HTTP/1.1 220 OK\r\n\r\nOK\r\n";
   SpeConnWrite(conn, str, strlen(str));
   conn->WriteCallback.Handler = SPE_HANDLER1(onClose, conn);
   SpeConnFlush(conn);
