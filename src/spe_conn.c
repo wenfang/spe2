@@ -93,9 +93,8 @@ readNormal(void* arg) {
     goto end_out;
   }
   // read data
-  char buf[BUF_SIZE];
   for (;;) {
-    int res = read(conn->fd, buf, BUF_SIZE);
+    int res = SpeBufReadAppend(conn->fd, conn->ReadBuffer, BUF_SIZE);
     // read error
     if (res == -1) {
       if (errno == EINTR) continue;
@@ -109,29 +108,23 @@ readNormal(void* arg) {
       conn->Closed = 1;
       break;
     }
-    // read some data break
-    SpeStringCatb(conn->readBuffer, buf, res);
     break;
   }
   // check read type
   if (conn->readType == SPE_CONN_READUNTIL) {
-    int pos = SpeStringSearch(conn->readBuffer, conn->delim);
+    int pos = SpeBufSearch(conn->ReadBuffer, conn->delim);
     if (pos != -1) {
-      SpeStringCopyb(conn->Buffer, conn->readBuffer->data, pos);
-      SpeStringCats(conn->Buffer, conn->delim);
-      SpeStringConsume(conn->readBuffer, pos + strlen(conn->delim));
+      conn->RLen = pos + strlen(conn->delim);
       goto end_out;
     }
   } else if (conn->readType == SPE_CONN_READBYTES) {
-    if (conn->rbytes <= conn->readBuffer->len) {
-      SpeStringCopyb(conn->Buffer, conn->readBuffer->data, conn->rbytes);
-      SpeStringConsume(conn->readBuffer, conn->rbytes);
+    if (conn->rbytes <= conn->ReadBuffer->Len) {
+      conn->RLen = conn->rbytes;
       goto end_out;
     }
   } else if (conn->readType == SPE_CONN_READ) {
-    if (conn->readBuffer->len > 0) { 
-      SpeStringCopyb(conn->Buffer, conn->readBuffer->data, conn->readBuffer->len);
-      SpeStringConsume(conn->readBuffer, conn->readBuffer->len);
+    if (conn->ReadBuffer->Len > 0) { 
+      conn->RLen = conn->ReadBuffer->Len;
       goto end_out;
     }
   }
@@ -156,10 +149,9 @@ SpeConnReaduntil(SpeConn_t* conn, char* delim) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (!delim || conn->Closed || conn->Error) return false;
   // (sync):
-  int pos = SpeStringSearch(conn->readBuffer, delim);
+  int pos = SpeBufSearch(conn->ReadBuffer, delim);
   if (pos != -1) {
-    SpeStringCopyb(conn->Buffer, conn->readBuffer->data, pos);
-    SpeStringConsume(conn->readBuffer, pos + strlen(delim));
+    conn->RLen = pos + strlen(delim);
     SpeTaskEnqueue(&conn->ReadCallback);
     return true;
   }
@@ -167,6 +159,7 @@ SpeConnReaduntil(SpeConn_t* conn, char* delim) {
   conn->readTask.Handler  = SPE_HANDLER1(readNormal, conn);
   conn->readTask.Timeout  = 0;
   conn->ReadTimeout       = 0;
+  conn->RLen              = 0;
   conn->delim             = delim;
   conn->readType          = SPE_CONN_READUNTIL;
   SpeEpollEnable(conn->fd, SPE_EPOLL_READ, &conn->readTask);
@@ -184,9 +177,8 @@ SpeConnReadbytes(SpeConn_t* conn, unsigned len) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (len == 0 || conn->Closed || conn->Error ) return false;
   // (sync):
-  if (len <= conn->readBuffer->len) {
-    SpeStringCopyb(conn->Buffer, conn->readBuffer->data, len);
-    SpeStringConsume(conn->readBuffer, len);
+  if (len <= conn->ReadBuffer->Len) {
+    conn->RLen = len;
     SpeTaskEnqueue(&conn->ReadCallback);
     return true;
   }
@@ -194,6 +186,7 @@ SpeConnReadbytes(SpeConn_t* conn, unsigned len) {
   conn->readTask.Handler  = SPE_HANDLER1(readNormal, conn);
   conn->readTask.Timeout  = 0;
   conn->ReadTimeout       = 0;
+  conn->RLen              = 0;
   conn->rbytes            = len;
   conn->readType          = SPE_CONN_READBYTES;
   SpeEpollEnable(conn->fd, SPE_EPOLL_READ, &conn->readTask);
@@ -211,9 +204,8 @@ SpeConnRead(SpeConn_t* conn) {
   ASSERT(conn && conn->readType == SPE_CONN_READNONE);
   if (conn->Closed || conn->Error) return false;
   // (sync):
-  if (conn->readBuffer->len > 0) {
-    SpeStringCopyb(conn->Buffer, conn->readBuffer->data, conn->readBuffer->len);
-    SpeStringConsume(conn->readBuffer, conn->readBuffer->len);
+  if (conn->ReadBuffer->Len > 0) {
+    conn->RLen = conn->ReadBuffer->Len;
     SpeTaskEnqueue(&conn->ReadCallback);
     return true;
   }
@@ -221,6 +213,7 @@ SpeConnRead(SpeConn_t* conn) {
   conn->readTask.Handler  = SPE_HANDLER1(readNormal, conn);
   conn->readTask.Timeout  = 0;
   conn->ReadTimeout       = 0;
+  conn->RLen              = 0;
   conn->readType          = SPE_CONN_READ;
   SpeEpollEnable(conn->fd, SPE_EPOLL_READ, &conn->readTask);
   if (conn->readExpireTime) SpeTaskEnqueueTimer(&conn->readTask, conn->readExpireTime);
@@ -241,7 +234,7 @@ writeNormal(void* arg) {
     goto end_out;
   }
   // write date
-  int res = write(conn->fd, conn->writeBuffer->data, conn->writeBuffer->len);
+  int res = write(conn->fd, conn->writeBuffer->Data, conn->writeBuffer->Len);
   if (res < 0) {
     if (errno == EPIPE) {
       conn->Closed = 1;
@@ -251,8 +244,8 @@ writeNormal(void* arg) {
     }
     goto end_out;
   }
-  SpeStringConsume(conn->writeBuffer, res);
-  if (conn->writeBuffer->len == 0) goto end_out;
+  SpeBufLConsume(conn->writeBuffer, res);
+  if (conn->writeBuffer->Len == 0) goto end_out;
   return;
 
 end_out:
@@ -271,7 +264,7 @@ bool
 SpeConnFlush(SpeConn_t* conn) {
   ASSERT(conn && conn->writeType == SPE_CONN_WRITENONE);
   if (conn->Closed || conn->Error) return false;
-  if (conn->writeBuffer->len == 0) {
+  if (conn->writeBuffer->Len == 0) {
     SpeTaskEnqueue(&conn->WriteCallback);
     return true;
   }
@@ -308,13 +301,11 @@ connInit(SpeConn_t* conn, unsigned fd) {
   SpeTaskInit(&conn->writeTask, SPE_TASK_NORM);
   SpeTaskInit(&conn->ReadCallback, SPE_TASK_NORM);
   SpeTaskInit(&conn->WriteCallback, SPE_TASK_NORM);
-  conn->readBuffer  = SpeStringCreate(BUF_SIZE);
-  conn->writeBuffer = SpeStringCreate(BUF_SIZE);
-  conn->Buffer      = SpeStringCreate(BUF_SIZE);
-  if (!conn->readBuffer || !conn->writeBuffer || !conn->Buffer) {
-    SpeStringDestroy(conn->readBuffer);
-    SpeStringDestroy(conn->writeBuffer);
-    SpeStringDestroy(conn->Buffer);
+  conn->ReadBuffer  = SpeBufCreate();
+  conn->writeBuffer = SpeBufCreate();
+  if (!conn->ReadBuffer || !conn->writeBuffer) {
+    SpeBufDestroy(conn->ReadBuffer);
+    SpeBufDestroy(conn->writeBuffer);
     return false;
   }
   return true;
@@ -334,9 +325,8 @@ SpeConnCreate(unsigned fd) {
     SPE_LOG_ERR("connInit error");
     return NULL;
   }
-  SpeStringClean(conn->readBuffer);
-  SpeStringClean(conn->writeBuffer);
-  SpeStringClean(conn->Buffer);
+  SpeBufClean(conn->ReadBuffer);
+  SpeBufClean(conn->writeBuffer);
   // init conn status
   conn->readExpireTime  = 0;
   conn->writeExpireTime = 0;

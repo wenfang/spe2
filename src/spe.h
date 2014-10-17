@@ -8,7 +8,7 @@
 #include "spe_epoll.h"
 #include "spe_signal.h"
 #include "spe_server.h"
-#include "spe_string.h"
+#include "spe_buf.h"
 #include "spe_worker.h"
 #include "spe_process.h"
 

@@ -3,31 +3,31 @@
 
 #include "spe_epoll.h"
 #include "spe_task.h"
-#include "spe_string.h"
+#include "spe_buf.h"
 #include "spe_handler.h"
 #include "spe_util.h"
 #include <string.h>
 
 struct SpeConn_s {
-  int           fd;
-  speTask_t     readTask;
-  speTask_t     writeTask;
-  speTask_t     ReadCallback;
-  speTask_t     WriteCallback;
-  unsigned      readExpireTime;
-  unsigned      writeExpireTime;
-  SpeString_t*  readBuffer;
-  SpeString_t*  writeBuffer;
-  SpeString_t*  Buffer;
-  char*         delim;
-  unsigned      rbytes;
-  unsigned      readType:2;
-  unsigned      writeType:1;
-  unsigned      ConnectTimeout:1;
-  unsigned      ReadTimeout:1;
-  unsigned      WriteTimeout:1;
-  unsigned      Closed:1;
-  unsigned      Error:1;
+  int       fd;
+  speTask_t readTask;
+  speTask_t writeTask;
+  speTask_t ReadCallback;
+  speTask_t WriteCallback;
+  unsigned  readExpireTime;
+  unsigned  writeExpireTime;
+  speBuf_t* ReadBuffer;
+  speBuf_t* writeBuffer;
+  unsigned  RLen;
+  char*     delim;
+  unsigned  rbytes;
+  unsigned  readType:2;
+  unsigned  writeType:1;
+  unsigned  ConnectTimeout:1;
+  unsigned  ReadTimeout:1;
+  unsigned  WriteTimeout:1;
+  unsigned  Closed:1;
+  unsigned  Error:1;
 } __attribute__((aligned(sizeof(long))));
 typedef struct SpeConn_s SpeConn_t;
 
@@ -47,7 +47,7 @@ static inline bool
 SpeConnWrite(SpeConn_t* conn, char* buf, unsigned len) {
   ASSERT(conn && buf && len);
   if (conn->Closed || conn->Error) return false;
-  return SpeStringCatb(conn->writeBuffer, buf, len);
+  return SpeBufCat(conn->writeBuffer, buf, len);
 }
 
 extern bool

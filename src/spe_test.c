@@ -6,7 +6,8 @@ static void onClose(SpeConn_t *conn) {
 }
 
 static void onRead(SpeConn_t *conn) {
-  SpeConnWrites(conn, "OK\r\n");
+  char* str = "OK\r\n";
+  SpeConnWrite(conn, str, strlen(str));
   conn->WriteCallback.Handler = SPE_HANDLER1(onClose, conn);
   SpeConnFlush(conn);
 }
@@ -19,7 +20,6 @@ static void process(SpeConn_t *conn) {
 static void
 testInit() {
   SpeServerRegister("127.0.0.1", 7879, process);
-  SpeServerRegister("127.0.0.1", 7880, process);
 }
 
 speModule_t speTestModule = {

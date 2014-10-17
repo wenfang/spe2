@@ -64,6 +64,7 @@ SpeBufToUpper(speBuf_t* buf);
 static inline void 
 SpeBufClean(speBuf_t* buf) {
   ASSERT(buf);
+  if (!buf->Data) return;
   buf->Data     = buf->start;
   buf->Len      = 0;
   buf->Data[0]  = 0;

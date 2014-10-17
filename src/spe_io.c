@@ -69,6 +69,7 @@ SpeIORead(speIO_t* io) {
   ASSERT(io);
   if (io->Closed || io->Error) return -1;
   io->rtype = SPE_IO_READ;
+  io->RLen  = 0;
   return ioReadCommon(io);
 }
 
@@ -81,8 +82,9 @@ int
 SpeIOReadbytes(speIO_t* io, unsigned len) {
   ASSERT(io && len);
   if (io->Closed || io->Error) return -1;
-  io->rtype  = SPE_IO_READBYTES;
-  io->rbytes = len;
+  io->rtype   = SPE_IO_READBYTES;
+  io->RLen    = 0;
+  io->rbytes  = len;
   return ioReadCommon(io);
 }
 
@@ -95,8 +97,9 @@ int
 SpeIOReaduntil(speIO_t* io, const char* delim) {  
   ASSERT(io && delim);
   if (io->Closed || io->Error) return -1;
-  io->rtype  = SPE_IO_READUNTIL;
-  io->delim  = delim;
+  io->rtype = SPE_IO_READUNTIL;
+  io->RLen  = 0;
+  io->delim = delim;
   return ioReadCommon(io);
 }
 
