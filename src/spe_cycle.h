@@ -3,13 +3,12 @@
 
 #include <stdbool.h>
 
-struct speCycle_s {
+typedef struct {
   char  *confFile; 
   int   daemon;
   int   procs;
   void  **ctx;
-};
-typedef struct speCycle_s speCycle_t;
+} speCycle_t;
 
 bool SpeCycleInit(int speModuleNum);
 void SpeCycleDestroy();

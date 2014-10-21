@@ -3,7 +3,7 @@
 
 #include "spe_buf.h"
 
-struct speIO_s {
+typedef struct {
   speBuf_t*   ReadBuffer;
   speBuf_t*   writeBuffer;
   unsigned    RLen;
@@ -13,8 +13,7 @@ struct speIO_s {
   unsigned    rtype:2;
   unsigned    Closed:1;
   unsigned    Error:1;
-};
-typedef struct speIO_s speIO_t;
+} speIO_t;
 
 extern int
 SpeIORead(speIO_t* io);
