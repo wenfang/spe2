@@ -10,20 +10,18 @@
 
 #define SPE_BUF_ERROR -2
 
-struct speBuf_s {
+typedef struct {
   char*     Data;
   char*     start;
   unsigned  Len;      
   unsigned  size;     
-} __attribute__((aligned(sizeof(long))));
-typedef struct speBuf_s speBuf_t;
+} speBuf_t __attribute__((aligned(sizeof(long))));
 
-struct speBufList_s {
+typedef struct {
   speBuf_t**  Data; 
   unsigned    Len;    
   unsigned    size;
-} __attribute__((aligned(sizeof(long))));
-typedef struct speBufList_s speBufList_t;
+} speBufList_t __attribute__((aligned(sizeof(long))));
 
 extern bool 
 SpeBufCat(speBuf_t* buf, const char* src, unsigned len);

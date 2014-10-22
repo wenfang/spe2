@@ -14,6 +14,7 @@
 struct speServer_s {
   unsigned            sfd;
   SpeServerHandler    handler;
+  void                *arg;
   speTask_t           listenTask;
   pthread_mutex_t     *acceptMutex;
   unsigned            acceptMutexHold;
@@ -25,8 +26,7 @@ typedef struct speServer_s speServer_t;
 static speServer_t *gServer;
 
 static void
-serverAccept(void *arg) {
-  speServer_t* server = arg;
+serverAccept(speServer_t* server) {
   int cfd = SpeSockAccept(server->sfd);
   if (cfd <= 0) return;
   if (!server->handler) {
@@ -34,13 +34,13 @@ serverAccept(void *arg) {
     SpeSockClose(cfd);
     return;
   }
-  SpeConn_t* conn = SpeConnCreate(cfd);
+  speConn_t* conn = SpeConnCreate(cfd);
   if (!conn) {
     SPE_LOG_ERR("SpeConnCreate Error");
     SpeSockClose(cfd);
     return;
   }
-  conn->ReadCallback.Handler = SPE_HANDLER1(server->handler, conn);
+  conn->ReadCallback.Handler = SPE_HANDLER2(server->handler, conn, server->arg);
   SpeTaskEnqueue(&conn->ReadCallback);
 }
 
@@ -81,7 +81,7 @@ SpeServerRegister
 ===================================================================================================
 */
 bool
-SpeServerRegister(const char* addr, int port, SpeServerHandler handler) {
+SpeServerRegister(const char* addr, int port, SpeServerHandler handler, void* arg) {
   // create server fd
   int sfd = SpeSockTcpServer(addr, port);
   if (sfd < 0) {
@@ -96,8 +96,9 @@ SpeServerRegister(const char* addr, int port, SpeServerHandler handler) {
     SpeSockClose(sfd);
     return false;
   }
-  server->sfd      = sfd;
-  server->handler  = handler;
+  server->sfd     = sfd;
+  server->handler = handler;
+  server->arg     = arg;
   SpeTaskInit(&server->listenTask, SPE_TASK_FAST);
   server->listenTask.Handler = SPE_HANDLER1(serverAccept, server);
   server->acceptMutex = SpeShmMutexCreate();

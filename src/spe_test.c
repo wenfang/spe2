@@ -1,7 +1,6 @@
-#include "spe_test.h"
-#include "spe_server.h"
-#include "spe_worker.h"
+#include "spe.h"
 
+/*
 static void onClose(SpeConn_t *conn) {
   SpeConnDestroy(conn);
 }
@@ -17,10 +16,28 @@ static void process(SpeConn_t *conn) {
   conn->ReadCallback.Handler = SPE_HANDLER1(onRead, conn);
   SpeConnReaduntil(conn, "\r\n\r\n");
 }
+*/
+
+static void 
+infoHandle(speRPCConn_t* rpcConn) {
+  char* msg = "+info ok\r\n";
+  SpeConnWrite(rpcConn->conn, msg, strlen(msg));
+  SpeConnFlush(rpcConn->conn);
+  SpeBufListClean(rpcConn->request);
+  SpeConnRead(rpcConn->conn);
+}
+
+static speRPC_t* rpc;
 
 static void
 testInit() {
-  SpeServerRegister("127.0.0.1", 7879, process);
+  rpc = SpeRPCCreate("127.0.0.1", 7879);
+  SpeRPCRegisteHandler(rpc, "info", infoHandle);
+}
+
+static void
+testDeinit() {
+  SpeRPCDestroy(rpc);
 }
 
 speModule_t speTestModule = {
@@ -30,5 +47,5 @@ speModule_t speTestModule = {
   testInit,
   NULL,
   NULL,
-  NULL,
+  testDeinit,
 };

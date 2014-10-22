@@ -2,13 +2,29 @@
 #define __SPE_RPC_H
 
 #include "spe_map.h"
+#include "spe_buf.h"
+#include "spe_conn.h"
 
-typedef struct {
-} speRPCMsg_t;
+#define SPE_RPCMSG_OK     1
+#define SPE_RPCMSG_ERR    2
+#define SPE_RPCMSG_NUM    3
+#define SPE_RPCMSG_BULK   4
+#define SPE_RPCMSG_MBULK  5
 
 typedef struct {
   speMap_t* cmdMap;
 } speRPC_t;
+
+typedef struct {
+  unsigned      status;
+  int           paramLeft;
+  int           dataLeft;
+  speBufList_t* request;
+  speConn_t*    conn;
+  speRPC_t*     rpc;
+} speRPCConn_t;
+
+typedef void (*SpeRPCHandler)(speRPCConn_t* rpcConn);
 
 extern speRPC_t*
 SpeRPCCreate(const char* addr, int port);
@@ -17,6 +33,6 @@ extern void
 SpeRPCDestroy(speRPC_t *rpc);
 
 extern bool
-SpeRPCRegisteHandler(speRPC_t *rpc, const char* cmd);
+SpeRPCRegisteHandler(speRPC_t *rpc, const char* cmd, SpeRPCHandler handler);
 
 #endif

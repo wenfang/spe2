@@ -5,7 +5,7 @@
 #include "spe_module.h"
 #include <stdbool.h>
 
-typedef void (*SpeServerHandler)(SpeConn_t*);
+typedef void (*SpeServerHandler)(speConn_t*, void*);
 
 extern void
 SpeServerPreLoop();
@@ -14,7 +14,7 @@ extern void
 SpeServerPostLoop();
 
 extern bool
-SpeServerRegister(const char* addr, int port, SpeServerHandler handler);
+SpeServerRegister(const char* addr, int port, SpeServerHandler handler, void* arg);
 
 extern speModule_t speServerModule;
 

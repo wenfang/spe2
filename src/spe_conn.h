@@ -28,37 +28,37 @@ typedef struct {
   unsigned  WriteTimeout:1;
   unsigned  Closed:1;
   unsigned  Error:1;
-} SpeConn_t __attribute__((aligned(sizeof(long))));
+} speConn_t __attribute__((aligned(sizeof(long))));
 
 extern bool
-SpeConnConnect(SpeConn_t* conn, const char* addr, const char* port);
+SpeConnConnect(speConn_t* conn, const char* addr, const char* port);
 
 extern bool
-SpeConnRead(SpeConn_t* conn);
+SpeConnRead(speConn_t* conn);
 
 extern bool
-SpeConnReadbytes(SpeConn_t* conn, unsigned len);
+SpeConnReadbytes(speConn_t* conn, unsigned len);
 
 extern bool
-SpeConnReaduntil(SpeConn_t* conn, char* delim);
+SpeConnReaduntil(speConn_t* conn, char* delim);
 
 static inline bool
-SpeConnWrite(SpeConn_t* conn, char* buf, unsigned len) {
+SpeConnWrite(speConn_t* conn, char* buf, unsigned len) {
   ASSERT(conn && buf && len);
   if (conn->Closed || conn->Error) return false;
   return SpeBufCat(conn->writeBuffer, buf, len);
 }
 
 extern bool
-SpeConnFlush(SpeConn_t* conn);
+SpeConnFlush(speConn_t* conn);
 
 extern bool
-SpeConnSetTimeout(SpeConn_t* conn, unsigned readExpireTime, unsigned writeExpireTime);
+SpeConnSetTimeout(speConn_t* conn, unsigned readExpireTime, unsigned writeExpireTime);
 
-extern SpeConn_t*
+extern speConn_t*
 SpeConnCreate(unsigned fd);
 
 extern void
-SpeConnDestroy(SpeConn_t* conn);
+SpeConnDestroy(speConn_t* conn);
 
 #endif
