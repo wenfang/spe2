@@ -5,6 +5,7 @@
 #include "spe_buf.h"
 #include "spe_conn.h"
 
+#define SPE_RPCMSG_NONE   0
 #define SPE_RPCMSG_OK     1
 #define SPE_RPCMSG_ERR    2
 #define SPE_RPCMSG_NUM    3
@@ -16,10 +17,16 @@ typedef struct {
 } speRPC_t;
 
 typedef struct {
+  int           type;
+  speBufList_t* msg;
+} speRPCResp_t;
+
+typedef struct {
   unsigned      status;
   int           paramLeft;
   int           dataLeft;
   speBufList_t* request;
+  speRPCResp_t  response;
   speConn_t*    conn;
   speRPC_t*     rpc;
 } speRPCConn_t;
@@ -34,5 +41,8 @@ SpeRPCDestroy(speRPC_t *rpc);
 
 extern bool
 SpeRPCRegisteHandler(speRPC_t *rpc, const char* cmd, SpeRPCHandler handler);
+
+extern void
+SpeRPCDone(speRPCConn_t* rpcConn);
 
 #endif

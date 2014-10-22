@@ -20,11 +20,9 @@ static void process(SpeConn_t *conn) {
 
 static void 
 infoHandle(speRPCConn_t* rpcConn) {
-  char* msg = "+info ok\r\n";
-  SpeConnWrite(rpcConn->conn, msg, strlen(msg));
-  SpeConnFlush(rpcConn->conn);
-  SpeBufListClean(rpcConn->request);
-  SpeConnRead(rpcConn->conn);
+  rpcConn->response.type = SPE_RPCMSG_NUM;
+  SpeBufListAppend(rpcConn->response.msg, "10", 2);
+  SpeRPCDone(rpcConn);
 }
 
 static speRPC_t* rpc;
