@@ -19,12 +19,12 @@ extern int
 SpeSockTcpServer(const char* addr, int port);
 
 static inline int 
-spe_sock_tcp_socket() {
+SpeSockTcpSocket() {
   return socket(AF_INET, SOCK_STREAM, 0);
 }
 
 static inline int 
-spe_sock_udp_socket() {
+SpeSockUdpSocket() {
   return socket(AF_INET, SOCK_DGRAM, 0);
 }
 

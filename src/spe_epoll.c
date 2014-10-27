@@ -14,6 +14,7 @@ struct speEpoll_s {
   speTask_t*  writeTask;
   unsigned    mask:2;             // mask set in epoll
 } __attribute__((aligned(sizeof(long))));
+
 typedef struct speEpoll_s speEpoll_t;
 
 static int        epfd;
