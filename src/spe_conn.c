@@ -156,7 +156,7 @@ SpeConnReaduntil(speConn_t* conn, char* delim) {
     SpeTaskEnqueue(&conn->ReadCallback);
     return true;
   }
-  // check Buffer
+  // check Buffer for delim
   int pos = SpeBufSearch(conn->ReadBuffer, delim);
   if (pos != -1) {
     conn->RLen = pos + strlen(delim);

@@ -1,4 +1,6 @@
-OBJS = spe.o spe_module.o spe_opt.o spe_io.o spe_log.o spe_util.o spe_epoll.o spe_task.o spe_rbtree.o spe_sock.o spe_signal.o spe_server.o spe_shm.o spe_conn.o spe_test.o spe_cycle.o spe_worker.o spe_process.o spe_buf.o cJSON.o spe_map.o spe_rpc.o
+LUA_DIR = ../support/lua
+
+OBJS = spe.o spe_module.o spe_opt.o spe_io.o spe_log.o spe_util.o spe_epoll.o spe_task.o spe_rbtree.o spe_sock.o spe_signal.o spe_server.o spe_shm.o spe_conn.o spe_test.o spe_cycle.o spe_worker.o spe_process.o spe_buf.o cJSON.o spe_map.o spe_rpc.o spe_lua.o
 
 OBJS_BUF = spe_buf.o spe_buf_test.o
 OBJS_IO = spe_buf.o spe_io.o spe_io_test.o
@@ -6,10 +8,13 @@ OBJS_OPT = spe_buf.o spe_io.o spe_opt.o spe_opt_test.o
 OBJS_MAP = spe_map.o spe_util.o spe_map_test.o
 
 .c.o:
-	gcc -DDEBUG -pg -g -fPIC -std=gnu99 -pthread -Wall -c $< -o $@
+	gcc -DDEBUG -g -fPIC -std=gnu99 -I$(LUA_DIR)/src -I/usr/local/include -pthread -Wall -c $< -o $@
 
-all:$(OBJS)
-	gcc -pg -g $(OBJS) -lm -lpthread -o spe
+all:$(OBJS) $(LUA_DIR)/src/liblua.a
+	gcc -g $(OBJS) $(LUA_DIR)/src/liblua.a -lprofiler -ldl -lm -lpthread -o spe
+
+$(LUA_DIR)/src/liblua.a:
+	make -C $(LUA_DIR) linux
 
 buf: $(OBJS_BUF)
 	gcc $(OBJS_BUF) -o spe_buf
@@ -24,6 +29,7 @@ map: $(OBJS_MAP)
 	gcc $(OBJS_MAP) -o spe_map
 
 clean:
+	make -C $(LUA_DIR) clean
 	rm -rf *.o
 	rm -rf spe spe_buf spe_io spe_opt spe_map
 

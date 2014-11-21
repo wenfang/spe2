@@ -3,6 +3,7 @@
 #include "spe_task.h"
 #include "spe_signal.h"
 #include "spe_server.h"
+#include "spe_lua.h"
 #include "spe_test.h"
 
 speModule_t *speModules[] = {
@@ -10,6 +11,7 @@ speModule_t *speModules[] = {
   &speTaskModule,
   &speSignalModule,
   &speServerModule,
+  &speLuaModule,
   &speTestModule,
   NULL,
 };

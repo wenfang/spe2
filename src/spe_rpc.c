@@ -61,7 +61,13 @@ rpcParse(speRPCConn_t* rpcConn) {
         rpcConn->status = RPC_PARSE_DATA;
         break;
       case RPC_PARSE_DATA: 
-        if (pos != rpcConn->dataLeft) goto errout;
+        if (pos > rpcConn->dataLeft) goto errout;
+        if (pos < rpcConn->dataLeft) {
+          SpeBufListAppend(rpcConn->request, rpcConn->conn->ReadBuffer->Data, pos+2);
+          SpeBufLConsume(rpcConn->conn->ReadBuffer, pos+2);
+          rpcConn->dataLeft -= pos+2;
+          break;
+        }
         SpeBufListAppend(rpcConn->request, rpcConn->conn->ReadBuffer->Data, pos);
         SpeBufLConsume(rpcConn->conn->ReadBuffer, pos+2);
         rpcConn->paramLeft--;

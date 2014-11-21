@@ -26,12 +26,13 @@ SpeMasterProcess() {
         if (wait(&status) == -1) break;
       }
       speReap = 0;
-      exit(0);
+     break;
     }
   }
 }
 
 int main(int argc, char* argv[]) {
+  ProfilerStart("tmp/spe_profile");
   if (argc > 2) {
     fprintf(stdout, "Usage: %s [configFile]\n", argv[0]);
     return 1;
@@ -94,5 +95,6 @@ int main(int argc, char* argv[]) {
 
   SpeCycleDestroy(&cycle);
   SpeOptDestroy();
+  ProfilerStop();
   return 0;
 }

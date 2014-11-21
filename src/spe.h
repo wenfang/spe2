@@ -12,5 +12,6 @@
 #include "spe_worker.h"
 #include "spe_process.h"
 #include "spe_rpc.h"
+#include "spe_lua.h"
 
 #endif
