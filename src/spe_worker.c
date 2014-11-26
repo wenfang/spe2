@@ -8,27 +8,21 @@
 
 bool speWorkerStop;
 
-/*
-static void workerControl(int *fd) {
-  int cfd = *fd;
-  int msg = 0;
-  read(cfd, &msg, sizeof(msg));
+static void workerCtrlHandler() {
 }
-*/
 
 void
 SpeWorkerProcess() {
+  // enable control task
+  SpeProcessEnableControl(SPE_HANDLER0(workerCtrlHandler));
+
   for (int i = 0; speModules[i] != NULL; i++) {
     if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
-    if (speModules[i]->initWorker) {
-      speModules[i]->initWorker(&cycle);
-    }
+    if (speModules[i]->initWorker) speModules[i]->initWorker(&cycle);
   }
   for (int i = 0; speModules[i] != NULL; i++) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
-    if (speModules[i]->initWorker) {
-      speModules[i]->initWorker(&cycle);
-    }
+    if (speModules[i]->initWorker) speModules[i]->initWorker(&cycle);
   }
 
   unsigned timeout = 300;
@@ -43,14 +37,10 @@ SpeWorkerProcess() {
 
   for (int i = 0; speModules[i] != NULL; i++) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
-    if (speModules[i]->exitWorker) {
-      speModules[i]->exitWorker(&cycle);
-    }
+    if (speModules[i]->exitWorker) speModules[i]->exitWorker(&cycle);
   }
   for (int i = 0; speModules[i] != NULL; i++) {
     if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
-    if (speModules[i]->exitWorker) {
-      speModules[i]->exitWorker(&cycle);
-    }
+    if (speModules[i]->exitWorker) speModules[i]->exitWorker(&cycle);
   }
 }

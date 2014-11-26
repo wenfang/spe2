@@ -63,16 +63,12 @@ int main(int argc, char* argv[]) {
   // init core module
   for (int i = 0; speModules[i] != NULL; i++) {
     if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
-    if (speModules[i]->initMaster) {
-      speModules[i]->initMaster(&cycle);
-    }
+    if (speModules[i]->initMaster) speModules[i]->initMaster(&cycle);
   }
   // init user module
   for (int i = 0; speModules[i] != NULL; i++) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
-    if (speModules[i]->initMaster) {
-      speModules[i]->initMaster(&cycle);
-    }
+    if (speModules[i]->initMaster) speModules[i]->initMaster(&cycle);
   }
   // fork child
   int res = SpeProcessSpawn(cycle.procs);
@@ -81,18 +77,15 @@ int main(int argc, char* argv[]) {
   } else {
     SpeMasterProcess();
   }
-
+  // exit user module
   for (int i = 0; speModules[i] != NULL; i++) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
-    if (speModules[i]->exitMaster) {
-      speModules[i]->exitMaster(&cycle);
-    }
+    if (speModules[i]->exitMaster) speModules[i]->exitMaster(&cycle);
   }
+  // exit core module
   for (int i = 0; speModules[i] != NULL; i++) {
     if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
-    if (speModules[i]->exitMaster) {
-      speModules[i]->exitMaster(&cycle);
-    }
+    if (speModules[i]->exitMaster) speModules[i]->exitMaster(&cycle);
   }
   
   SpeOptDestroy();
