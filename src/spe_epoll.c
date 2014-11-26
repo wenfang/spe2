@@ -9,13 +9,11 @@
 #include <sys/eventfd.h>
 #include <errno.h>
 
-struct speEpoll_s {
+typedef struct {
   speTask_t*  readTask;
   speTask_t*  writeTask;
   unsigned    mask:2;             // mask set in epoll
-} __attribute__((aligned(sizeof(long))));
-
-typedef struct speEpoll_s speEpoll_t;
+} speEpoll_t __attribute__((aligned(sizeof(long))));
 
 static int        epfd;
 static speEpoll_t all_epoll[MAX_FD];

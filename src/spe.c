@@ -32,28 +32,30 @@ SpeMasterProcess() {
 }
 
 int main(int argc, char* argv[]) {
-  ProfilerStart("tmp/spe_profile");
   if (argc > 2) {
     fprintf(stdout, "Usage: %s [configFile]\n", argv[0]);
     return 1;
   }
-  if (argc == 2) {
-    cycle.confFile = argv[1];
-    SpeOptCreate(cycle.confFile);
-  }
-  if (!SpeSetMaxOpenFiles(MAX_FD)) {
-    fprintf(stderr, "[ERROR] SetMaxOpenFiles %s\n", strerror(errno));
+  if (argc == 2 && !SpeOptCreate(argv[1])) {
+    fprintf(stderr, "[ERROR] Config File Parse Error\n");
     return 1;
   }
   // get module number
-  int speModuleNum = 0;
   for (int i = 0; speModules[i] != NULL; i++) {
+    if (i > SPE_MODULE_MAX) {
+      fprintf(stderr, "[ERROR] Too Many Modules\n");
+      return 1;
+    }
     speModules[i]->index = i;
-    speModuleNum++;
   }
   // init cycle
-  if (!SpeCycleInit(speModuleNum)) {
+  if (!SpeCycleInit()) {
     fprintf(stderr, "[ERROR] SpeCycleInit Error\n");
+    return 1;
+  }
+  // set maxfd
+  if (!SpeSetMaxOpenFiles(cycle.maxfd)) {
+    fprintf(stderr, "[ERROR] SetMaxOpenFiles %s\n", strerror(errno));
     return 1;
   }
   // daemonize
@@ -92,9 +94,7 @@ int main(int argc, char* argv[]) {
       speModules[i]->exitMaster(&cycle);
     }
   }
-
-  SpeCycleDestroy(&cycle);
+  
   SpeOptDestroy();
-  ProfilerStop();
   return 0;
 }

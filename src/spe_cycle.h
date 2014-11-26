@@ -3,15 +3,16 @@
 
 #include <stdbool.h>
 
+#define SPE_MODULE_MAX  128
+
 typedef struct {
-  char  *confFile; 
   int   daemon;
   int   procs;
-  void  **ctx;
+  int   maxfd;
+  void  *ctx[SPE_MODULE_MAX];
 } speCycle_t;
 
-bool SpeCycleInit(int speModuleNum);
-void SpeCycleDestroy();
+bool SpeCycleInit();
 
 extern speCycle_t cycle;
 

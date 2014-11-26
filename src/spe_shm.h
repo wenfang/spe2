@@ -3,11 +3,10 @@
 
 #include <pthread.h>
 
-struct speShm_s {
+typedef struct {
   void*     addr;
   unsigned  size;
-};
-typedef struct speShm_s speShm_t;
+} speShm_t;
 
 extern speShm_t*
 SpeShmCreate(unsigned size);

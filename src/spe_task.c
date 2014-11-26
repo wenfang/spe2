@@ -9,9 +9,9 @@
 #define SPE_TASK_FREE   0   // task is alloc not in queue
 #define SPE_TASK_TIMER  1   // task in timer queue
 #define SPE_TASK_QUEUE  2   // task in running queue
-#define SPE_TASK_RUN    3   // task is run
+#define SPE_TASK_RUN    3   // task is running
 
-int speTaskNum;
+int speTaskNum;             // task num in running queue
 
 static LIST_HEAD(task_head);
 static struct rb_root   timer_head;

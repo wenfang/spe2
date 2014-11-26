@@ -6,7 +6,7 @@
 #define SPE_CORE_MODULE 1
 #define SPE_USER_MODULE 2
 
-struct speModule_s {
+typedef struct {
   const char* name;
   int         index;
   int         moduleType;
@@ -15,8 +15,7 @@ struct speModule_s {
   void  (*initWorker)(speCycle_t*);
   void  (*exitWorker)(speCycle_t*);
   void  (*exitMaster)(speCycle_t*);
-};
-typedef struct speModule_s speModule_t;
+} speModule_t;
 
 extern speModule_t *speModules[];
 

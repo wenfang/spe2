@@ -1,6 +1,7 @@
 #ifndef __SPE_CONN_H
 #define __SPE_CONN_H
 
+#include "spe_module.h"
 #include "spe_epoll.h"
 #include "spe_task.h"
 #include "spe_buf.h"
@@ -60,5 +61,7 @@ SpeConnCreate(unsigned fd);
 
 extern void
 SpeConnDestroy(speConn_t* conn);
+
+extern speModule_t speConnModule;
 
 #endif

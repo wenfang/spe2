@@ -10,7 +10,7 @@
 #define SPE_TASK_NORM 0
 #define SPE_TASK_FAST 1
 
-struct speTask_s {
+typedef struct speTask_s {
   speHandler_t      Handler;
   struct rb_node    timerNode;
   struct list_head  taskNode;
@@ -18,8 +18,7 @@ struct speTask_s {
   unsigned          status:6;
   unsigned          flag:1;
   unsigned          Timeout:1;
-} __attribute__((aligned(sizeof(long))));
-typedef struct speTask_s speTask_t;
+} speTask_t __attribute__((aligned(sizeof(long))));
 
 extern int speTaskNum;
 

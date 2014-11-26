@@ -11,7 +11,7 @@ OBJS_MAP = spe_map.o spe_util.o spe_map_test.o
 	gcc -DDEBUG -g -fPIC -std=gnu99 -I$(LUA_DIR)/src -I/usr/local/include -pthread -Wall -c $< -o $@
 
 all:$(OBJS) $(LUA_DIR)/src/liblua.a
-	gcc -g $(OBJS) $(LUA_DIR)/src/liblua.a -lprofiler -ldl -lm -lpthread -o spe
+	gcc -g $(OBJS) $(LUA_DIR)/src/liblua.a -ldl -lm -lpthread -o spe
 
 $(LUA_DIR)/src/liblua.a:
 	make -C $(LUA_DIR) linux

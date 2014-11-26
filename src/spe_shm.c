@@ -13,7 +13,7 @@ speShm_t*
 SpeShmCreate(unsigned size) {
   speShm_t* shm = calloc(1, sizeof(speShm_t));
   if (!shm) {
-    SPE_LOG_ERR("spe_shm alloc calloc error");
+    SPE_LOG_ERR("spe shm calloc error");
     return NULL;
   }
   shm->addr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_ANON|MAP_SHARED, -1, 0);
@@ -35,7 +35,7 @@ void
 SpeShmDestroy(speShm_t* shm) {
   ASSERT(shm);
   if (munmap(shm->addr, shm->size) == -1) {
-    SPE_LOG_ERR("SpeShmFree error");
+    SPE_LOG_ERR("spe shm munmap error");
   }
   free(shm);
 }
