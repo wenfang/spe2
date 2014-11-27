@@ -1,10 +1,10 @@
+#include "spe_process.h"
 #include "spe_worker.h"
 #include "spe_module.h"
 #include "spe_server.h"
 #include "spe_task.h"
 #include "spe_epoll.h"
 #include "spe_signal.h"
-#include "google/profiler.h"
 
 bool speWorkerStop;
 
@@ -13,9 +13,6 @@ static void workerCtrlHandler() {
 
 void
 SpeWorkerProcess() {
-  // enable control task
-  SpeProcessEnableControl(SPE_HANDLER0(workerCtrlHandler));
-
   for (int i = 0; speModules[i] != NULL; i++) {
     if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
     if (speModules[i]->initWorker) speModules[i]->initWorker(&cycle);
@@ -24,6 +21,9 @@ SpeWorkerProcess() {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
     if (speModules[i]->initWorker) speModules[i]->initWorker(&cycle);
   }
+
+  // enable control task
+  SpeProcessEnableControl(SPE_HANDLER0(workerCtrlHandler));
 
   unsigned timeout = 300;
   while (!speWorkerStop) {
@@ -34,6 +34,8 @@ SpeWorkerProcess() {
     SpeTaskProcess();
     SpeSignalProcess();
   }
+  // disable control task
+  SpeProcessDisableControl();
 
   for (int i = 0; speModules[i] != NULL; i++) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;

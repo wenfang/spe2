@@ -109,3 +109,13 @@ SpeProcessEnableControl(speHandler_t handler) {
   procs[procSlot].controlTask.Handler = handler;
   SpeEpollEnable(procs[procSlot].channel[1], SPE_EPOLL_READ, &procs[procSlot].controlTask);
 }
+
+/*
+===================================================================================================
+SpeProcessDisableControl
+===================================================================================================
+*/
+void
+SpeProcessDisableControl() {
+  SpeEpollDisable(procs[procSlot].channel[1], SPE_EPOLL_READ);
+}

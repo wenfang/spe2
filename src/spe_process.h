@@ -9,4 +9,7 @@ SpeProcessSpawn(unsigned procNum);
 extern void
 SpeProcessEnableControl(speHandler_t handler);
 
+extern void
+SpeProcessDisableControl();
+
 #endif

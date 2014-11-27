@@ -13,6 +13,7 @@
 
 struct speServer_s {
   unsigned            sfd;
+  unsigned            stop;
   SpeServerHandler    handler;
   void                *arg;
   speTask_t           listenTask;
@@ -52,12 +53,12 @@ SpeServerPreLoop
 void
 SpeServerPreLoop() {
   for (speServer_t* server = gServer; server != NULL; server = server->next) {
-    if (!pthread_mutex_trylock(server->acceptMutex)) {
+    if (!server->stop && !pthread_mutex_trylock(server->acceptMutex)) {
       if (server->acceptMutexHold) continue;
       server->acceptMutexHold = 1;
       SpeEpollEnable(server->sfd, SPE_EPOLL_LISTEN, &server->listenTask);
-    } else {
-      if (server->acceptMutexHold) SpeEpollDisable(server->sfd, SPE_EPOLL_LISTEN);
+    } else if (server->acceptMutexHold) {
+      SpeEpollDisable(server->sfd, SPE_EPOLL_LISTEN);
       server->acceptMutexHold = 0;
     }
   }
@@ -97,6 +98,7 @@ SpeServerRegister(const char* addr, int port, SpeServerHandler handler, void* ar
     return false;
   }
   server->sfd     = sfd;
+  server->stop    = 0;
   server->handler = handler;
   server->arg     = arg;
   SpeTaskInit(&server->listenTask, SPE_TASK_FAST);
@@ -111,6 +113,18 @@ SpeServerRegister(const char* addr, int port, SpeServerHandler handler, void* ar
   server->next  = gServer;
   gServer       = server;
   return true;
+}
+
+/*
+===================================================================================================
+SpeServerStop
+===================================================================================================
+*/
+void
+SpeServerStop() {
+  for (speServer_t* server = gServer; server != NULL; server = server->next) {
+    server->stop = 1;
+  }
 }
 
 /*
