@@ -27,10 +27,9 @@ SpeWorkerProcess() {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
     if (speModules[i]->initWorker) speModules[i]->initWorker(&cycle);
   }
-
   // enable control task
   SpeProcessEnableControl(SPE_HANDLER0(workerCtrlHandler));
-
+  // event loop
   unsigned timeout = 300;
   while (!speWorkerStop) {
     if (speTaskNum) timeout = 0;
