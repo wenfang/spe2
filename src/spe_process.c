@@ -14,56 +14,37 @@
 
 typedef struct {
   pid_t     pid;
-  int       channel[2];
-  speTask_t controlTask;
+  int       notifyFd;
 } proc_t __attribute__((aligned(sizeof(long))));
 
+// master use this
 static proc_t procs[SPE_MAX_PROC];
 
-static int procSlot = -1;
-static int lastProc;
-
 static int getSlot() {
-  for (int i=0; i<lastProc; i++) {
-    if (procs[i].pid == -1) {
-      return i;
-    }
+  for (int i=0; i<SPE_MAX_PROC; i++) {
+    if (procs[i].pid == 0) return i;
   }
-  if (lastProc < SPE_MAX_PROC) return lastProc++;
   return -1;
 }
 
+// worker use this
+static int controlFd;
+static speTask_t controlTask;
+
 /*
 ===================================================================================================
-SpeProcessSpawn
+SpeProcessExit
 ===================================================================================================
 */
-int SpeProcessSpawn(unsigned procNum) {
-  unsigned cpuCount = SpeCpuCount();
-  for (int i=0; i<procNum; i++) {
-    if ((procSlot = getSlot()) == -1) return -1;
-    if (socketpair(AF_UNIX, SOCK_STREAM, 0, procs[procSlot].channel)) {
-      procSlot = -1;
-      return -1;
+int SpeProcessExit(pid_t pid) {
+  for (int i=0; i<SPE_MAX_PROC; i++) {
+    if (procs[i].pid == pid) {
+      procs[i].pid = 0;
+      close(procs[i].notifyFd);
     }
-    pid_t pid = fork();
-    if (!pid) {
-      // set cpu affinity
-      cpu_set_t set;
-      CPU_ZERO(&set);
-      CPU_SET(procSlot%cpuCount, &set);
-      sched_setaffinity(0, sizeof(cpu_set_t), &set);
-      close(procs[procSlot].channel[0]);
-      return 0;
-    } else if (pid < 0) {
-      procSlot = -1;
-      return -1;
-    }
-    procs[procSlot].pid = pid;
-    close(procs[procSlot].channel[1]);
+    return 0;
   }
-  procSlot = -1;
-  return 1;
+  return -1;
 }
 
 /*
@@ -72,29 +53,30 @@ SpeProcessFork
 ===================================================================================================
 */
 int SpeProcessFork() {
+  int procSlot;
   if ((procSlot = getSlot()) == -1) return -1;
-  if (socketpair(AF_UNIX, SOCK_STREAM, 0, procs[procSlot].channel)) {
-    procSlot = -1;
-    return -1;
-  }
+
+  int channel[2];
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, channel)) return -1;
 
   pid_t pid = fork();
-  if (!pid) { // for child
+  if (pid < 0) return -1;
+  // for worker
+  if (!pid) {
     // set cpu affinity
     cpu_set_t set;
     CPU_ZERO(&set);
     CPU_SET(procSlot%SpeCpuCount(), &set);
     sched_setaffinity(0, sizeof(cpu_set_t), &set);
-    close(procs[procSlot].channel[0]);
+    // set controlFd
+    controlFd = channel[1];
+    close(channel[0]);
     return 0;
-  } else if (pid < 0) {
-    procSlot = -1;
-    return -1;
   }
-  // for parent
+  // for master
   procs[procSlot].pid = pid;
-  close(procs[procSlot].channel[1]);
-  procSlot = -1;
+  procs[procSlot].notifyFd = channel[0];
+  close(channel[1]);
   return 1;
 }
 
@@ -105,9 +87,9 @@ SpeProcessEnableControl
 */
 void
 SpeProcessEnableControl(speHandler_t handler) {
-  SpeTaskInit(&procs[procSlot].controlTask, SPE_TASK_FAST);
-  procs[procSlot].controlTask.Handler = handler;
-  SpeEpollEnable(procs[procSlot].channel[1], SPE_EPOLL_READ, &procs[procSlot].controlTask);
+  SpeTaskInit(&controlTask, SPE_TASK_FAST);
+  controlTask.Handler = handler;
+  SpeEpollEnable(controlFd, SPE_EPOLL_READ, &controlTask);
 }
 
 /*
@@ -117,5 +99,5 @@ SpeProcessDisableControl
 */
 void
 SpeProcessDisableControl() {
-  SpeEpollDisable(procs[procSlot].channel[1], SPE_EPOLL_READ);
+  SpeEpollDisable(controlFd, SPE_EPOLL_READ);
 }

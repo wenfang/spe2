@@ -8,6 +8,7 @@
 
 speModule_t *speModules[] = {
   &speEpollModule,
+  &speConnModule,
   &speTaskModule,
   &speSignalModule,
   &speServerModule,

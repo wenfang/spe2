@@ -16,7 +16,8 @@ typedef struct {
 } speEpoll_t __attribute__((aligned(sizeof(long))));
 
 static int        epfd;
-static speEpoll_t all_epoll[MAX_FD];
+static int        epoll_maxfd;
+static speEpoll_t *all_epoll;
 
 /*
 ===================================================================================================
@@ -56,7 +57,7 @@ SpeEpollEnable
 bool
 SpeEpollEnable(unsigned fd, unsigned mask, speTask_t* task) {
   ASSERT(task);
-  if (fd >= MAX_FD) return false;
+  if (fd >= epoll_maxfd) return false;
   speEpoll_t* epoll_t = &all_epoll[fd];
   if (mask & SPE_EPOLL_READ) epoll_t->readTask = task;
   if (mask & SPE_EPOLL_WRITE) epoll_t->writeTask = task;
@@ -70,14 +71,12 @@ SpeEpollDisable
 */
 bool
 SpeEpollDisable(unsigned fd, unsigned mask) {
-  if (fd >= MAX_FD) return false;
+  if (fd >= epoll_maxfd) return false;
   speEpoll_t* epoll_t = &all_epoll[fd];
   if (mask & SPE_EPOLL_READ) epoll_t->readTask = NULL;
   if (mask & SPE_EPOLL_WRITE) epoll_t->writeTask = NULL;
   return epollChange(fd, epoll_t, epoll_t->mask & (~mask));
 }
-
-static struct epoll_event epEvents[MAX_FD];
 
 /*
 ===================================================================================================
@@ -86,7 +85,8 @@ SpeEpollProcess
 */
 void
 SpeEpollProcess(int timeout) {
-  int events_n = epoll_wait(epfd, epEvents, MAX_FD, timeout);
+  struct epoll_event epEvents[epoll_maxfd];
+  int events_n = epoll_wait(epfd, epEvents, epoll_maxfd, timeout);
   if (unlikely(events_n < 0)) {
     if (errno == EINTR) return;
     SPE_LOG_ERR("epoll_wait error: %s", strerror(errno));
@@ -124,6 +124,8 @@ epollInit
 static void
 epollInit(speCycle_t *cycle) {
   epfd = epoll_create(10240);
+  epoll_maxfd = cycle->maxfd;
+  all_epoll = calloc(1, sizeof(speEpoll_t)*epoll_maxfd);
 }
 
 /*
@@ -134,6 +136,7 @@ epollExit
 static void
 epollExit(speCycle_t *cycle) {
   close(epfd);
+  free(all_epoll);
 }
 
 speModule_t speEpollModule = {

@@ -393,3 +393,13 @@ SpeConnDestroy(speConn_t* conn) {
   SpeEpollDisable(conn->fd, SPE_EPOLL_READ|SPE_EPOLL_WRITE);
   SpeSockClose(conn->fd);
 }
+
+speModule_t speConnModule = {
+  "speConn",
+  0,
+  SPE_CORE_MODULE,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+};

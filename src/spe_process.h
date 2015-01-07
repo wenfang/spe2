@@ -4,7 +4,7 @@
 #include "spe_handler.h"
 
 extern int
-SpeProcessSpawn(unsigned procNum);
+SpeProcessFork();
 
 extern void
 SpeProcessEnableControl(speHandler_t handler);

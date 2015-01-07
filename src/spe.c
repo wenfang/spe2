@@ -1,12 +1,18 @@
 #include "spe.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
-static int speReap;
+static int speReapWorker;
 static void reapWorker(int sig) {
-  speReap = 1;
+  speReapWorker = 1;
+}
+
+static int speStopWorker;
+static void stopWorker(int sig) {
+  speStopWorker = 1;
 }
 
 static void
@@ -14,19 +20,40 @@ SpeMasterProcess() {
   SpeSignalRegister(SIGPIPE, SIG_IGN);
   SpeSignalRegister(SIGHUP, SIG_IGN);
   SpeSignalRegister(SIGCHLD, reapWorker);
+  SpeSignalRegister(SIGUSR1, stopWorker);
 
   sigset_t set;
   sigemptyset(&set);
   for (;;) {
     sigsuspend(&set);
     SpeSignalProcess();
-    if (speReap) {
+    if (speReapWorker) {
       for (;;) {
         int status;
-        if (wait(&status) == -1) break;
+        int pid = waitpid(-1, &status, WNOHANG);
+        if (pid == 0) break;
+        if (pid < 0) {
+          SPE_LOG_ERR("waipid error");
+          break;
+        }
+        if (SpeProcessExit(pid) < 0) {
+          SPE_LOG_ERR("SpeProcessExit Error");
+          continue;
+        }
+        // for new worker
+        int res = SpeProcessFork();
+        if (res < 0) {
+          SPE_LOG_ERR("SpeProcessFork Error");
+        } else if (res == 0) {
+          SpeWorkerProcess();
+          return;
+        }
+        SPE_LOG_WARNING("SpeWorker Restart");
       }
-      speReap = 0;
-     break;
+      speReapWorker = 0;
+    }
+    if (speStopWorker) {
+      SPE_LOG_ERR("receive stop");
     }
   }
 }
@@ -40,7 +67,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "[ERROR] Config File Parse Error\n");
     return 1;
   }
-  // get module number
+  // get module number, set module index
   for (int i = 0; speModules[i] != NULL; i++) {
     if (i > SPE_MODULE_MAX) {
       fprintf(stderr, "[ERROR] Too Many Modules\n");
@@ -70,12 +97,18 @@ int main(int argc, char* argv[]) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
     if (speModules[i]->initMaster) speModules[i]->initMaster(&cycle);
   }
-  // fork child
-  int res = SpeProcessSpawn(cycle.procs);
-  if (res == 0) {
-    SpeWorkerProcess();
+  // fork worker
+  int res;
+  for (int i=0; i<cycle.procs; i++) {
+    res = SpeProcessFork();
+    if (res <= 0) break;
+  }
+  if (res == 0) { // for worker
+      SpeWorkerProcess();
+  } else if (res == 1) { // for master
+      SpeMasterProcess();
   } else {
-    SpeMasterProcess();
+    fprintf(stderr, "[ERROR] SpeProcessFork Error\n");
   }
   // exit user module
   for (int i = 0; speModules[i] != NULL; i++) {
