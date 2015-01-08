@@ -83,8 +83,28 @@ int SpeWorkerReset(pid_t pid) {
   return -1;
 }
 
+/*
+===================================================================================================
+SpeWorkerStop
+===================================================================================================
+*/
+void SpeWorkerStop() {
+  int comm = 1;
+  for (int i=0; i<SPE_MAX_WORKER; i++) {
+    if (workers[i].pid == 0) continue;
+    write(workers[i].notifyFd, &comm, sizeof(int));
+    workers[i].pid = 0;
+    close(workers[i].notifyFd);
+  }
+}
+
 // for worker
 static void workerCtrlHandler() {
+  int comm;
+  read(controlFd, &comm, sizeof(int));
+  if (comm == 1) {
+    workerStop = 1;
+  }
 }
 
 void
@@ -118,6 +138,7 @@ SpeWorkerProcess() {
   }
   // disable control task
   SpeEpollDisable(controlFd, SPE_EPOLL_READ);
+  close(controlFd);
   // exit worker
   for (int i = 0; speModules[i] != NULL; i++) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;

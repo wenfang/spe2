@@ -10,6 +10,9 @@ SpeWorkerFork();
 extern int
 SpeWorkerReset(pid_t pid);
 
+extern void
+SpeWorkerStop();
+
 extern void 
 SpeWorkerProcess();
 

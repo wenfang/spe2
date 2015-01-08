@@ -53,7 +53,8 @@ SpeMasterProcess() {
       speReapWorker = 0;
     }
     if (speStopWorker) {
-      SPE_LOG_ERR("receive stop");
+      SpeWorkerStop();
+      break;
     }
   }
 }
