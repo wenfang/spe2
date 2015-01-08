@@ -20,8 +20,6 @@ typedef struct speTask_s {
   unsigned          Timeout:1;
 } speTask_t __attribute__((aligned(sizeof(long))));
 
-extern int speTaskNum;
-
 extern void
 SpeTaskInit(speTask_t* task, unsigned flag);
 
@@ -39,6 +37,8 @@ SpeTaskDequeueTimer(speTask_t* task);
 
 extern void
 SpeTaskProcess(void);
+
+extern int speTaskNum;
 
 extern speModule_t speTaskModule;
 

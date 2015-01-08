@@ -53,4 +53,13 @@ SpeSetMaxOpenFiles(unsigned file_num) {
 extern int
 SpeDaemon();
 
+extern bool
+SpeSavePid(const char* pid_file);
+
+extern pid_t
+SpeGetPid(const char* pid_file);
+
+extern bool
+SpeRemovePid(const char* pid_file);
+
 #endif
