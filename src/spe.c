@@ -17,6 +17,8 @@ static void stopWorker(int sig) {
 
 static void
 SpeMasterProcess() {
+  SpeSavePid(cycle.pidfile);
+
   SpeSignalRegister(SIGPIPE, SIG_IGN);
   SpeSignalRegister(SIGHUP, SIG_IGN);
   SpeSignalRegister(SIGCHLD, reapWorker);
@@ -57,6 +59,7 @@ SpeMasterProcess() {
       break;
     }
   }
+  SpeRemovePid(cycle.pidfile);
 }
 
 int main(int argc, char* argv[]) {

@@ -34,11 +34,11 @@ SpeDaemon() {
 
 /*
 ===================================================================================================
-spe_save_pid
+SpeSavePid
 ===================================================================================================
 */
 bool
-spe_save_pid(const char* pid_file) {
+SpeSavePid(const char* pid_file) {
   ASSERT(pid_file);
   FILE *fp;
   if (!(fp = fopen(pid_file, "w"))) return false;
@@ -49,11 +49,27 @@ spe_save_pid(const char* pid_file) {
 
 /*
 ===================================================================================================
-spe_remove_pid
+SpeGetPid
+===================================================================================================
+*/
+pid_t
+SpeGetPid(const char* pid_file) {
+  ASSERT(pid_file);
+  long pid;
+  FILE *fp;
+  if (!(fp = fopen(pid_file, "r"))) return 0;
+  fscanf(fp, "%ld\n", &pid);
+  fclose(fp);
+  return pid;
+}
+
+/*
+===================================================================================================
+SpeRemovePid
 ===================================================================================================
 */
 bool
-spe_remove_pid(const char* pid_file) {
+SpeRemovePid(const char* pid_file) {
   ASSERT(pid_file);
   if (unlink(pid_file)) return false;
   return true;
