@@ -36,12 +36,12 @@ SpeMasterProcess() {
           SPE_LOG_ERR("waipid error");
           break;
         }
-        if (SpeProcessExit(pid) < 0) {
+        if (SpeWorkerReset(pid) < 0) {
           SPE_LOG_ERR("SpeProcessExit Error");
           continue;
         }
         // for new worker
-        int res = SpeProcessFork();
+        int res = SpeWorkerFork();
         if (res < 0) {
           SPE_LOG_ERR("SpeProcessFork Error");
         } else if (res == 0) {
@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
   // fork worker
   int res;
   for (int i=0; i<cycle.procs; i++) {
-    res = SpeProcessFork();
+    res = SpeWorkerFork();
     if (res <= 0) break;
   }
   if (res == 0) { // for worker

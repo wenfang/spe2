@@ -1,13 +1,10 @@
 #include "spe.h"
 
-static int count = 0;
-
 static void onClose(speConn_t *conn) {
   SpeConnDestroy(conn);
 }
 
 static void onRead(speConn_t *conn) {
-  if (count++ > 100000) speWorkerStop=true;
   char* str = "HTTP/1.1 220 OK\r\n\r\nOK\r\n";
   SpeConnWrite(conn, str, strlen(str));
   conn->WriteCallback.Handler = SPE_HANDLER1(onClose, conn);

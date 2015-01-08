@@ -2,9 +2,15 @@
 #define __SPE_WORKER_H
 
 #include <stdbool.h>
+#include <sys/types.h>
 
-extern bool speWorkerStop;
+extern int
+SpeWorkerFork();
 
-void SpeWorkerProcess();
+extern int
+SpeWorkerReset(pid_t pid);
+
+extern void 
+SpeWorkerProcess();
 
 #endif
