@@ -17,7 +17,8 @@
 
 #define SPE_CONN_CONNECT    1
 
-static speConn_t all_conn[MAX_FD];
+static speConn_t *all_conn;
+static int maxConnFd;
 
 static void
 connectNormal(void* arg) {
@@ -327,11 +328,11 @@ SpeConnSetTimeout(speConn_t* conn, unsigned readExpireTime, unsigned writeExpire
 
 /*
 ===================================================================================================
-connInit
+connInitialize
 ===================================================================================================
 */
 static bool
-connInit(speConn_t* conn, unsigned fd) {
+connInitialize(speConn_t* conn, unsigned fd) {
   conn->fd = fd;
   SpeTaskInit(&conn->readTask, SPE_TASK_NORM);
   SpeTaskInit(&conn->writeTask, SPE_TASK_NORM);
@@ -354,13 +355,13 @@ SpeConnCreate
 */
 speConn_t*
 SpeConnCreate(unsigned fd) {
-  if (unlikely(fd >= MAX_FD)) {
+  if (unlikely(fd >= maxConnFd)) {
     SPE_LOG_ERR("conn overflow");
     return NULL;
   }
   SpeSockSetBlock(fd, 0);
   speConn_t* conn = &all_conn[fd];
-  if (conn->fd == 0 && !connInit(conn, fd)) {
+  if (conn->fd == 0 && !connInitialize(conn, fd)) {
     SPE_LOG_ERR("connInit error");
     return NULL;
   }
@@ -394,12 +395,23 @@ SpeConnDestroy(speConn_t* conn) {
   SpeSockClose(conn->fd);
 }
 
+static void
+connInit(speCycle_t *cycle) {
+  all_conn = calloc(1, sizeof(speConn_t)*cycle->maxfd);
+  maxConnFd = cycle->maxfd;
+}
+
+static void
+connExit(speCycle_t *cycle) {
+  free(all_conn);
+}
+
 speModule_t speConnModule = {
   "speConn",
   0,
   SPE_CORE_MODULE,
   NULL,
-  NULL,
-  NULL,
+  connInit,
+  connExit,
   NULL,
 };

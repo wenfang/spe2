@@ -11,8 +11,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#define MAX_FD  1000000
-
 #define likely(x)   __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
 
