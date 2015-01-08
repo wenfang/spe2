@@ -22,6 +22,8 @@ SpeMasterProcess() {
   SpeSignalRegister(SIGPIPE, SIG_IGN);
   SpeSignalRegister(SIGHUP, SIG_IGN);
   SpeSignalRegister(SIGCHLD, reapWorker);
+  SpeSignalRegister(SIGTERM, stopWorker);
+  SpeSignalRegister(SIGINT, stopWorker);
   SpeSignalRegister(SIGUSR1, stopWorker);
 
   sigset_t set;

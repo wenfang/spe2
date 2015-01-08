@@ -104,7 +104,11 @@ void SpeWorkerStop() {
 // for worker
 static void workerCtrlHandler() {
   int comm;
-  read(controlFd, &comm, sizeof(int));
+  int res = read(controlFd, &comm, sizeof(int));
+  if (res == 0) { // master exit, worker exit
+    workerStop = 1;
+    return;
+  }
   if (comm == WORKER_STOP) {
     workerStop = 1;
   }
