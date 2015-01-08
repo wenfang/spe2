@@ -11,6 +11,9 @@
 #include <unistd.h>
 #include <signal.h>
 
+// command list
+#define WORKER_STOP  1
+
 // for master
 #define SPE_MAX_WORKER 128
 
@@ -89,7 +92,7 @@ SpeWorkerStop
 ===================================================================================================
 */
 void SpeWorkerStop() {
-  int comm = 1;
+  int comm = WORKER_STOP;
   for (int i=0; i<SPE_MAX_WORKER; i++) {
     if (workers[i].pid == 0) continue;
     write(workers[i].notifyFd, &comm, sizeof(int));
@@ -102,7 +105,7 @@ void SpeWorkerStop() {
 static void workerCtrlHandler() {
   int comm;
   read(controlFd, &comm, sizeof(int));
-  if (comm == 1) {
+  if (comm == WORKER_STOP) {
     workerStop = 1;
   }
 }

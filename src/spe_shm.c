@@ -1,4 +1,5 @@
 #include "spe_shm.h"
+#include "spe_worker.h"
 #include "spe_log.h"
 #include "spe_util.h"
 #include <stdlib.h>
@@ -69,7 +70,7 @@ void
 SpeShmMutexDestroy(pthread_mutex_t* shmux) {
   ASSERT(shmux);
   pthread_mutex_destroy(shmux);
-  if (munmap(shmux, sizeof(pthread_mutex_t) == -1)) {
+  if (munmap(shmux, sizeof(pthread_mutex_t)) == -1) {
     SPE_LOG_ERR("SpeShmuxDestroy error");
   }
 }
