@@ -31,7 +31,7 @@ serverAccept(speServer_t* server) {
   int cfd = SpeSockAccept(server->sfd);
   if (cfd <= 0) return;
   if (!server->handler) {
-    SPE_LOG_ERR("server no handler set");
+    SPE_LOG_ERR("Handler Not Set");
     SpeSockClose(cfd);
     return;
   }
@@ -129,15 +129,26 @@ SpeServerStop() {
 
 /*
 ===================================================================================================
+serverDestroy
+===================================================================================================
+*/
+static bool
+serverDestroy(speServer_t* server) {
+  if (server->acceptMutex) SpeShmMutexDestroy(server->acceptMutex);
+  SpeSockClose(server->sfd);
+  free(server);
+  return true;
+}
+
+/*
+===================================================================================================
 serverDeinit
 ===================================================================================================
 */
 static bool
 serverDeinit() {
   for (speServer_t* server = gServer; server != NULL; server = server->next) {
-    if (server->acceptMutex) SpeShmMutexDestroy(server->acceptMutex);
-    SpeSockClose(server->sfd);
-    free(server);
+    serverDestroy(server);
   }
   return true;
 }

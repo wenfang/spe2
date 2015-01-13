@@ -398,6 +398,9 @@ SpeConnDestroy(speConn_t* conn) {
 static bool
 connInit(speCycle_t *cycle) {
   all_conn = calloc(1, sizeof(speConn_t)*cycle->maxfd);
+  if (!all_conn) {
+    return false;
+  }
   maxConnFd = cycle->maxfd;
   return true;
 }
