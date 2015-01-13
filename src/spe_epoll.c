@@ -121,11 +121,12 @@ SpeEpollProcess(int timeout) {
 epollInit
 ===================================================================================================
 */
-static void
+static bool
 epollInit(speCycle_t *cycle) {
   epfd = epoll_create(10240);
   epoll_maxfd = cycle->maxfd;
   all_epoll = calloc(1, sizeof(speEpoll_t)*epoll_maxfd);
+  return true;
 }
 
 /*
@@ -133,10 +134,11 @@ epollInit(speCycle_t *cycle) {
 epollExit
 ===================================================================================================
 */
-static void
+static bool
 epollExit(speCycle_t *cycle) {
   close(epfd);
   free(all_epoll);
+  return true;
 }
 
 speModule_t speEpollModule = {

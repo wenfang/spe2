@@ -11,10 +11,10 @@ typedef struct {
   int         index;
   int         moduleType;
 
-  void  (*initMaster)(speCycle_t*);
-  void  (*initWorker)(speCycle_t*);
-  void  (*exitWorker)(speCycle_t*);
-  void  (*exitMaster)(speCycle_t*);
+  bool  (*initMaster)(speCycle_t*);
+  bool  (*initWorker)(speCycle_t*);
+  bool  (*exitWorker)(speCycle_t*);
+  bool  (*exitMaster)(speCycle_t*);
 } speModule_t;
 
 extern speModule_t *speModules[];

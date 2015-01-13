@@ -395,15 +395,17 @@ SpeConnDestroy(speConn_t* conn) {
   SpeSockClose(conn->fd);
 }
 
-static void
+static bool
 connInit(speCycle_t *cycle) {
   all_conn = calloc(1, sizeof(speConn_t)*cycle->maxfd);
   maxConnFd = cycle->maxfd;
+  return true;
 }
 
-static void
+static bool
 connExit(speCycle_t *cycle) {
   free(all_conn);
+  return true;
 }
 
 speModule_t speConnModule = {

@@ -132,13 +132,14 @@ SpeServerStop() {
 serverDeinit
 ===================================================================================================
 */
-static void
+static bool
 serverDeinit() {
   for (speServer_t* server = gServer; server != NULL; server = server->next) {
     if (server->acceptMutex) SpeShmMutexDestroy(server->acceptMutex);
     SpeSockClose(server->sfd);
     free(server);
   }
+  return true;
 }
 
 speModule_t speServerModule = {

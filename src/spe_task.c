@@ -154,9 +154,10 @@ SpeTaskProcess(void) {
   }
 }
 
-static void
+static bool
 taskInit(speCycle_t *cycle) {
   timer_head = RB_ROOT;
+  return true;
 }
 
 speModule_t speTaskModule = {

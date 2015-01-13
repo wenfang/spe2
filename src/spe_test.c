@@ -28,17 +28,18 @@ infoHandle(speRPCConn_t* rpcConn) {
 static speRPC_t* rpc;
 */
 
-static void
+static bool
 testInit() {
   /*
   rpc = SpeRPCCreate("127.0.0.1", 7879);
   SpeRPCRegisteHandler(rpc, "info", infoHandle);
   */
-  SpeServerRegister("127.0.0.1", 7879, process, NULL);
+  return SpeServerRegister("127.0.0.1", 7879, process, NULL);
 }
 
-static void
+static bool
 testDeinit() {
+  return true;
   /*
   SpeRPCDestroy(rpc);
   */

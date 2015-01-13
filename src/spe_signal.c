@@ -20,12 +20,13 @@ static sigset_t     blockedSig;
 signalInit
 ===================================================================================================
 */
-static void 
+static bool
 signalInit(speCycle_t *cycle) {
   signalQueueLen = 0;
   memset(signalQueue, 0, sizeof(signalQueue));
   memset(signalState, 0, sizeof(signalState));
   sigfillset(&blockedSig);
+  return true;
 }
 
 /*
