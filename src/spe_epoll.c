@@ -124,8 +124,13 @@ epollInit
 static bool
 epollInit(speCycle_t *cycle) {
   epfd = epoll_create(10240);
+  if (epfd < 0) return false;
   epoll_maxfd = cycle->maxfd;
   all_epoll = calloc(1, sizeof(speEpoll_t)*epoll_maxfd);
+  if (!all_epoll) {
+    close(epfd);
+    return false;
+  }
   return true;
 }
 
