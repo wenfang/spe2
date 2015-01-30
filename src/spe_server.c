@@ -20,11 +20,13 @@ struct speServer_s {
   pthread_mutex_t     *acceptMutex;
   unsigned            acceptMutexHold;
   struct speServer_s  *next;
+  struct list_head    serverNode;
 } __attribute__((aligned(sizeof(long))));
 typedef struct speServer_s speServer_t;
 
 // global server list
 static speServer_t *gServer;
+static LIST_HEAD(serverHead);
 
 static void
 serverAccept(speServer_t* server) {
