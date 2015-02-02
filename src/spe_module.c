@@ -16,3 +16,18 @@ speModule_t *speModules[] = {
   &speTestModule,
   NULL,
 };
+
+int speModuleNum;
+
+bool
+speModuleInit() {
+  int i;
+  for (i = 0; speModules[i] != NULL; i++) {
+    if (i > SPE_MODULE_MAX) {
+      return false;
+    }
+    speModules[i]->index = i;
+  }
+  speModuleNum = i;
+  return true;
+}

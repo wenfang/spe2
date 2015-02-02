@@ -18,5 +18,9 @@ typedef struct {
 } speModule_t;
 
 extern speModule_t *speModules[];
+extern int speModuleNum;
+
+extern bool
+speModuleInit();
 
 #endif

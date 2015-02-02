@@ -73,13 +73,10 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "[ERROR] Config File Parse Error\n");
     return 1;
   }
-  // get module number, set module index
-  for (int i = 0; speModules[i] != NULL; i++) {
-    if (i > SPE_MODULE_MAX) {
-      fprintf(stderr, "[ERROR] Too Many Modules\n");
-      return 1;
-    }
-    speModules[i]->index = i;
+  // init modules index, get speModuleNum
+  if (!speModuleInit()) {
+    fprintf(stderr, "[ERROR] speModuleInit Error\n");
+    return 1;
   }
   // init cycle
   if (!SpeCycleInit()) {
@@ -92,16 +89,25 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   // daemonize
-  if (cycle.daemon) SpeDaemon();
+  if (cycle.daemon && SpeDaemon()) {
+    fprintf(stderr, "[ERROR] SpeDaemon Error\n");
+    return 1;
+  }
   // init core module
-  for (int i = 0; speModules[i] != NULL; i++) {
+  for (int i = 0; i < speModuleNum; i++) {
     if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
-    if (speModules[i]->initMaster) speModules[i]->initMaster(&cycle);
+    if (speModules[i]->initMaster && !speModules[i]->initMaster(&cycle)) {
+      fprintf(stderr, "[ERROR] core module initMaster Error\n");
+      return 1;
+    }
   }
   // init user module
-  for (int i = 0; speModules[i] != NULL; i++) {
+  for (int i = 0; i < speModuleNum; i++) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
-    if (speModules[i]->initMaster) speModules[i]->initMaster(&cycle);
+    if (speModules[i]->initMaster && !speModules[i]->initMaster(&cycle)) {
+      fprintf(stderr, "[ERROR] user module initMaster Error\n");
+      return 1;
+    }
   }
   // fork worker
   int res;
@@ -117,16 +123,16 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "[ERROR] SpeProcessFork Error\n");
   }
   // exit user module
-  for (int i = 0; speModules[i] != NULL; i++) {
+  for (int i = speModuleNum - 1; i >= 0; i--) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
     if (speModules[i]->exitMaster) speModules[i]->exitMaster(&cycle);
   }
   // exit core module
-  for (int i = 0; speModules[i] != NULL; i++) {
+  for (int i = speModuleNum - 1; i >= 0; i--) {
     if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
     if (speModules[i]->exitMaster) speModules[i]->exitMaster(&cycle);
   }
-  
+  // destroy speOpt
   SpeOptDestroy();
   return 0;
 }

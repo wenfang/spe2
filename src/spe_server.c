@@ -11,21 +11,7 @@
 #include <string.h>
 #include <errno.h>
 
-struct speServer_s {
-  unsigned            sfd;
-  unsigned            stop;
-  SpeServerHandler    handler;
-  void                *arg;
-  speTask_t           listenTask;
-  pthread_mutex_t     *acceptMutex;
-  unsigned            acceptMutexHold;
-  struct speServer_s  *next;
-  struct list_head    serverNode;
-} __attribute__((aligned(sizeof(long))));
-typedef struct speServer_s speServer_t;
-
 // global server list
-static speServer_t *gServer;
 static LIST_HEAD(serverHead);
 
 static void
@@ -54,12 +40,15 @@ SpeServerPreLoop
 */
 void
 SpeServerPreLoop() {
-  for (speServer_t* server = gServer; server != NULL; server = server->next) {
-    if (!server->stop && !pthread_mutex_trylock(server->acceptMutex)) {
+  speServer_t *server = NULL;
+  list_for_each_entry(server, &serverHead, serverNode) {
+    if (!pthread_mutex_trylock(server->acceptMutex)) {
       if (server->acceptMutexHold) continue;
       server->acceptMutexHold = 1;
       SpeEpollEnable(server->sfd, SPE_EPOLL_LISTEN, &server->listenTask);
-    } else if (server->acceptMutexHold) {
+      continue;
+    }
+    if (server->acceptMutexHold) {
       SpeEpollDisable(server->sfd, SPE_EPOLL_LISTEN);
       server->acceptMutexHold = 0;
     }
@@ -73,7 +62,8 @@ SpeServerPostLoop
 */
 void
 SpeServerPostLoop() {
-  for (speServer_t* server = gServer; server != NULL; server = server->next) {
+  speServer_t *server = NULL;
+  list_for_each_entry(server, &serverHead, serverNode) {
     if (server->acceptMutexHold) pthread_mutex_unlock(server->acceptMutex);
   }
 }
@@ -83,24 +73,23 @@ SpeServerPostLoop() {
 SpeServerRegister
 ===================================================================================================
 */
-bool
+speServer_t*
 SpeServerRegister(const char* addr, int port, SpeServerHandler handler, void* arg) {
   // create server fd
   int sfd = SpeSockTcpServer(addr, port);
   if (sfd < 0) {
     SPE_LOG_ERR("SpeSockTcpServer error %s:%d", addr, port);
-    return false;
+    return NULL;
   }
   SpeSockSetBlock(sfd, 0);
-  // create gServer
+  // create server
   speServer_t *server = calloc(1, sizeof(speServer_t));
   if (!server) {
     SPE_LOG_ERR("speServer_t alloc error");
     SpeSockClose(sfd);
-    return false;
+    return NULL;
   }
   server->sfd     = sfd;
-  server->stop    = 0;
   server->handler = handler;
   server->arg     = arg;
   SpeTaskInit(&server->listenTask, SPE_TASK_FAST);
@@ -110,34 +99,27 @@ SpeServerRegister(const char* addr, int port, SpeServerHandler handler, void* ar
     SPE_LOG_ERR("SpeShmuxCreate error");
     SpeSockClose(sfd);
     free(server);
-    return false;
+    return NULL;
   }
-  server->next  = gServer;
-  gServer       = server;
-  return true;
+  INIT_LIST_HEAD(&server->serverNode);
+  list_add_tail(&server->serverNode, &serverHead);
+  return server;
 }
 
 /*
 ===================================================================================================
-SpeServerStop
+SpeServerUnregister
 ===================================================================================================
 */
-void
-SpeServerStop() {
-  for (speServer_t* server = gServer; server != NULL; server = server->next) {
-    server->stop = 1;
+bool
+SpeServerUnregister(speServer_t* server) {
+  ASSERT(server);
+  if (server->acceptMutexHold) {
+    SpeEpollDisable(server->sfd, SPE_EPOLL_LISTEN);
   }
-}
-
-/*
-===================================================================================================
-serverDestroy
-===================================================================================================
-*/
-static bool
-serverDestroy(speServer_t* server) {
   if (server->acceptMutex) SpeShmMutexDestroy(server->acceptMutex);
   SpeSockClose(server->sfd);
+  list_del(&server->serverNode);
   free(server);
   return true;
 }
@@ -149,8 +131,11 @@ serverDeinit
 */
 static bool
 serverDeinit() {
-  for (speServer_t* server = gServer; server != NULL; server = server->next) {
-    serverDestroy(server);
+  speServer_t *server = NULL;
+  list_for_each_entry(server, &serverHead, serverNode) {
+    if (server->acceptMutex) SpeShmMutexDestroy(server->acceptMutex);
+    SpeSockClose(server->sfd);
+    free(server);
   }
   return true;
 }

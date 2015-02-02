@@ -121,11 +121,11 @@ SpeWorkerProcess() {
   SpeSignalRegister(SIGCHLD, SIG_IGN);
   SpeSignalRegister(SIGUSR1, SIG_IGN);
   // init worker
-  for (int i = 0; speModules[i] != NULL; i++) {
+  for (int i = 0; i < speModuleNum; i++) {
     if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
     if (speModules[i]->initWorker) speModules[i]->initWorker(&cycle);
   }
-  for (int i = 0; speModules[i] != NULL; i++) {
+  for (int i = 0; i < speModuleNum; i++) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
     if (speModules[i]->initWorker) speModules[i]->initWorker(&cycle);
   }
@@ -147,11 +147,11 @@ SpeWorkerProcess() {
   SpeEpollDisable(controlFd, SPE_EPOLL_READ);
   close(controlFd);
   // exit worker
-  for (int i = 0; speModules[i] != NULL; i++) {
+  for (int i = speModuleNum - 1; i >= 0; i--) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
     if (speModules[i]->exitWorker) speModules[i]->exitWorker(&cycle);
   }
-  for (int i = 0; speModules[i] != NULL; i++) {
+  for (int i = speModuleNum - 1; i >= 0; i--) {
     if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
     if (speModules[i]->exitWorker) speModules[i]->exitWorker(&cycle);
   }
