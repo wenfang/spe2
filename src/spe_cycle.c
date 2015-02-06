@@ -14,6 +14,6 @@ SpeCycleInit() {
   cycle.daemon = SpeOptInt("global", "daemon", 0);
   if ((cycle.procs = SpeOptInt("global", "procs", 1)) <= 0) return false;
   if ((cycle.maxfd = SpeOptInt("global", "maxfd", 1000000)) <= 0) return false;
-  cycle.pidfile = SpeOptString("global", "pidfile", "/tmp/spe.pid");
+  cycle.pidfile = SpeOptStr("global", "pidfile", "/tmp/spe.pid");
   return true;
 }

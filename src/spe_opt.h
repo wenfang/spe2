@@ -7,7 +7,7 @@ extern int
 SpeOptInt(char* section, char* key, int defaultValue);
 
 extern const char*
-SpeOptString(char* section, char* key, const char* defaultValue);
+SpeOptStr(char* section, char* key, const char* defaultValue);
 
 extern bool 
 SpeOptCreate(const char* configFile);

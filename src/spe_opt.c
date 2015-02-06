@@ -27,7 +27,7 @@ SpeOptSet
 */
 static bool 
 SpeOptSet(char* sec, char* key, char* val) {
-  SpeOpt_t* opt = calloc (1, sizeof(SpeOpt_t));
+  SpeOpt_t* opt = calloc(1, sizeof(SpeOpt_t));
   if (!opt) return false;
   // set section and key 
   strncpy(opt->sec, sec, SEC_MAXLEN);
@@ -63,7 +63,7 @@ SpeOptString
 ===================================================================================================
 */
 const char* 
-SpeOptString(char* section, char* key, const char* defaultValue) {
+SpeOptStr(char* section, char* key, const char* defaultValue) {
   if (!key) return defaultValue;
   if (!section) section = "global";
   SpeOpt_t* entry = NULL;
