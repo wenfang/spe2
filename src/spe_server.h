@@ -7,7 +7,7 @@
 
 typedef void (*SpeServerHandler)(speConn_t*, void*);
 
-typedef struct speServer_s {
+typedef struct {
   unsigned            sfd;
   SpeServerHandler    handler;
   void                *arg;

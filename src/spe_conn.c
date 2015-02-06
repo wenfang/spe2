@@ -37,7 +37,7 @@ end_out:
   if (conn->readExpireTime) SpeTaskDequeueTimer(&conn->readTask);
   conn->readType  = SPE_CONN_READNONE;
   conn->writeType = SPE_CONN_WRITENONE;
-  SPE_HANDLER_CALL(conn->ReadCallback.Handler);
+  SPE_HANDLER_CALL(conn->PostReadTask.Handler);
 }
 
 /*
@@ -75,7 +75,7 @@ SpeConnConnect(speConn_t* conn, const char* addr, const char* port) {
     conn->Error = 1;
   }
   // (sync): connect success or failed, call handler
-  SpeTaskEnqueue(&conn->ReadCallback);
+  SpeTaskEnqueue(&conn->PostReadTask);
   freeaddrinfo(servinfo);
   return true;
 }
@@ -137,7 +137,7 @@ end_out:
   SpeEpollDisable(conn->fd, SPE_EPOLL_READ);
   if (conn->readExpireTime) SpeTaskDequeueTimer(&conn->readTask);
   conn->readType = SPE_CONN_READNONE;
-  SPE_HANDLER_CALL(conn->ReadCallback.Handler);
+  SPE_HANDLER_CALL(conn->PostReadTask.Handler);
 }
 
 /*
@@ -154,14 +154,14 @@ SpeConnReaduntil(speConn_t* conn, char* delim) {
   if (res < 0 && errno != EINTR && errno != EAGAIN) conn->Error = 1;
   if (res == 0) conn->Closed = 1;
   if (conn->Error || conn->Closed) {
-    SpeTaskEnqueue(&conn->ReadCallback);
+    SpeTaskEnqueue(&conn->PostReadTask);
     return true;
   }
   // check Buffer for delim
   int pos = SpeBufSearch(conn->ReadBuffer, delim);
   if (pos != -1) {
     conn->RLen = pos + strlen(delim);
-    SpeTaskEnqueue(&conn->ReadCallback);
+    SpeTaskEnqueue(&conn->PostReadTask);
     return true;
   }
   // (async):
@@ -190,13 +190,13 @@ SpeConnReadbytes(speConn_t* conn, unsigned len) {
   if (res < 0 && errno != EINTR && errno != EAGAIN) conn->Error = 1;
   if (res == 0) conn->Closed = 1;
   if (conn->Error || conn->Closed) {
-    SpeTaskEnqueue(&conn->ReadCallback);
+    SpeTaskEnqueue(&conn->PostReadTask);
     return true;
   }
   // check buffer
   if (len <= conn->ReadBuffer->Len) {
     conn->RLen = len;
-    SpeTaskEnqueue(&conn->ReadCallback);
+    SpeTaskEnqueue(&conn->PostReadTask);
     return true;
   }
   // (async):
@@ -225,13 +225,13 @@ SpeConnRead(speConn_t* conn) {
   if (res < 0 && errno != EINTR && errno != EAGAIN) conn->Error = 1;
   if (res == 0) conn->Closed = 1;
   if (conn->Error || conn->Closed) {
-    SpeTaskEnqueue(&conn->ReadCallback);
+    SpeTaskEnqueue(&conn->PostReadTask);
     return true;
   }
   // check buffer
   if (conn->ReadBuffer->Len > 0) {
     conn->RLen = conn->ReadBuffer->Len;
-    SpeTaskEnqueue(&conn->ReadCallback);
+    SpeTaskEnqueue(&conn->PostReadTask);
     return true;
   }
   // (async):
@@ -277,7 +277,7 @@ end_out:
   SpeEpollDisable(conn->fd, SPE_EPOLL_WRITE);
   if (conn->writeExpireTime) SpeTaskDequeueTimer(&conn->writeTask);
   conn->writeType = SPE_CONN_WRITENONE;
-  SPE_HANDLER_CALL(conn->WriteCallback.Handler);
+  SPE_HANDLER_CALL(conn->PostWriteTask.Handler);
 }
 
 /*
@@ -297,12 +297,12 @@ SpeConnFlush(speConn_t* conn) {
       SPE_LOG_ERR("conn write error: %s", strerror(errno));
       conn->Error = 1;
     }
-    SpeTaskEnqueue(&conn->WriteCallback);
+    SpeTaskEnqueue(&conn->PostWriteTask);
     return true;
   }
   SpeBufLConsume(conn->writeBuffer, res);
   if (conn->writeBuffer->Len == 0) {
-    SpeTaskEnqueue(&conn->WriteCallback);
+    SpeTaskEnqueue(&conn->PostWriteTask);
     return true;
   }
   conn->writeTask.Handler = SPE_HANDLER1(writeNormal, conn);
@@ -336,8 +336,8 @@ connInitialize(speConn_t* conn, unsigned fd) {
   conn->fd = fd;
   SpeTaskInit(&conn->readTask, SPE_TASK_NORM);
   SpeTaskInit(&conn->writeTask, SPE_TASK_NORM);
-  SpeTaskInit(&conn->ReadCallback, SPE_TASK_NORM);
-  SpeTaskInit(&conn->WriteCallback, SPE_TASK_NORM);
+  SpeTaskInit(&conn->PostReadTask, SPE_TASK_NORM);
+  SpeTaskInit(&conn->PostWriteTask, SPE_TASK_NORM);
   conn->ReadBuffer  = SpeBufCreate();
   conn->writeBuffer = SpeBufCreate();
   if (!conn->ReadBuffer || !conn->writeBuffer) {
@@ -387,8 +387,8 @@ SpeConnDestroy(speConn_t* conn) {
   ASSERT(conn);
   SpeTaskDequeue(&conn->readTask);
   SpeTaskDequeue(&conn->writeTask);
-  SpeTaskDequeue(&conn->ReadCallback);
-  SpeTaskDequeue(&conn->WriteCallback);
+  SpeTaskDequeue(&conn->PostReadTask);
+  SpeTaskDequeue(&conn->PostWriteTask);
   if (conn->readExpireTime) SpeTaskDequeueTimer(&conn->readTask);
   if (conn->writeExpireTime) SpeTaskDequeueTimer(&conn->writeTask);
   SpeEpollDisable(conn->fd, SPE_EPOLL_READ|SPE_EPOLL_WRITE);

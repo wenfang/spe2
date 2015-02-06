@@ -1,10 +1,8 @@
 #include "spe_lua.h"
 #include "spe_log.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include "lua.h"
-#include "lauxlib.h"
-#include "lualib.h"
 
 static lua_State *L;
 
@@ -12,22 +10,15 @@ void
 SpeLuaRun(const char* buff) {
   luaL_loadbuffer(L, buff, strlen(buff), "line");
   lua_pcall(L, 0, 0, 0);
-  lua_getglobal(L, "X");
-  int x = lua_tointeger(L, -1);
-  SPE_LOG_ERR("GET FROM LUA: %d", x);
 }
 
-void
+SpeLuaThread_t*
 SpeLuaThread(const char* fname) {
-  lua_State *L1 = lua_newthread(L);
-  luaL_loadfile(L1, fname);
-  lua_resume(L1, L, 0);
-  lua_resume(L1, L, 0);
-  lua_resume(L1, L, 0);
-  lua_resume(L1, L, 0);
-  lua_getglobal(L1, "X");
-  int x = lua_tointeger(L1, -1);
-  SPE_LOG_ERR("GET FROM LUA: %d", x);
+  SpeLuaThread_t* thread = calloc(1, sizeof(SpeLuaThread_t));
+  if (!thread) return NULL;
+  thread->state = lua_newthread(L);
+  luaL_loadfile(thread->state, fname);
+  return thread;
 }
 
 static bool
@@ -47,8 +38,8 @@ speModule_t speLuaModule = {
   "speLua",
   0,
   SPE_CORE_MODULE,
-  NULL,
   luaInit,
-  luaExit,
   NULL,
+  NULL,
+  luaExit,
 };

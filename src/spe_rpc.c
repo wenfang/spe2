@@ -9,7 +9,7 @@
 #define RPC_PARSE_DATA  3
 #define RPC_PARSE_END   4
 
-static char* cmdNotSupportErr = "CommandNotSupport";
+static char* cmdNotSupportErr = "Command Not Support";
 
 static int checkToken(speConn_t* conn) {
   int pos = -1;
@@ -105,18 +105,18 @@ rpcHandler(speConn_t* conn, void* rpc) {
   rpcConn->status = RPC_PARSE_STAR;
   rpcConn->conn   = conn;
   rpcConn->rpc    = rpc;
-  conn->ReadCallback.Handler  = SPE_HANDLER1(rpcParse, rpcConn);
-  conn->WriteCallback.Handler = SPE_HANDLER_NULL;
+  conn->PostReadTask.Handler  = SPE_HANDLER1(rpcParse, rpcConn);
+  conn->PostWriteTask.Handler = SPE_HANDLER_NULL;
   SpeConnRead(conn);
   return;
 
 errout3:
-    SpeBufListDestroy(rpcConn->request);
+  SpeBufListDestroy(rpcConn->request);
 errout2:
-    free(rpcConn);
+  free(rpcConn);
 errout1:
-    SpeConnDestroy(conn);
-    return;
+  SpeConnDestroy(conn);
+  return;
 }
 
 speRPC_t*
@@ -128,7 +128,7 @@ SpeRPCCreate(const char* addr, int port) {
     free(rpc);
     return NULL;
   }
-  SpeServerRegister(addr, port, rpcHandler, rpc);
+  rpc->server = SpeServerRegister(addr, port, rpcHandler, rpc);
   return rpc;
 }
 
@@ -136,6 +136,7 @@ void
 SpeRPCDestroy(speRPC_t* rpc) {
   if (!rpc) return;
   SpeMapDestroy(rpc->cmdMap);
+  SpeServerUnregister(rpc->server);
   free(rpc);
 }
 

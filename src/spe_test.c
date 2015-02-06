@@ -1,5 +1,6 @@
 #include "spe.h"
 
+/*
 static void onClose(speConn_t *conn) {
   SpeConnDestroy(conn);
 }
@@ -12,37 +13,32 @@ static void onRead(speConn_t *conn) {
 }
 
 static void process(speConn_t *conn, void* arg) {
-  conn->ReadCallback.Handler = SPE_HANDLER1(onRead, conn);
+  conn->PostReadTask.Handler = SPE_HANDLER1(onRead, conn);
   SpeConnReaduntil(conn, "\r\n\r\n");
 }
+*/
 
-/*
 static void 
 infoHandle(speRPCConn_t* rpcConn) {
   rpcConn->response.type = SPE_RPCMSG_NUM;
   SpeBufListAppend(rpcConn->response.msg, "10", 2);
   SpeRPCDone(rpcConn);
-  SpeLuaThread("test.lua");
 }
 
 static speRPC_t* rpc;
-*/
 
 static bool
 testInit() {
-  /*
   rpc = SpeRPCCreate("127.0.0.1", 7879);
   SpeRPCRegisteHandler(rpc, "info", infoHandle);
-  */
-  return SpeServerRegister("127.0.0.1", 7879, process, NULL);
+  return true;
+//  return SpeServerRegister("127.0.0.1", 7879, process, NULL);
 }
 
 static bool
 testDeinit() {
-  return true;
-  /*
   SpeRPCDestroy(rpc);
-  */
+  return true;
 }
 
 speModule_t speTestModule = {

@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < speModuleNum; i++) {
     if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
     if (speModules[i]->initMaster && !speModules[i]->initMaster(&cycle)) {
-      fprintf(stderr, "[ERROR] core module initMaster Error\n");
+      SPE_LOG_ERR("core module initMaster Error");
       return 1;
     }
   }
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < speModuleNum; i++) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
     if (speModules[i]->initMaster && !speModules[i]->initMaster(&cycle)) {
-      fprintf(stderr, "[ERROR] user module initMaster Error\n");
+      SPE_LOG_ERR("user module initMaster Error");
       return 1;
     }
   }
@@ -125,12 +125,16 @@ int main(int argc, char* argv[]) {
   // exit user module
   for (int i = speModuleNum - 1; i >= 0; i--) {
     if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
-    if (speModules[i]->exitMaster) speModules[i]->exitMaster(&cycle);
+    if (speModules[i]->exitMaster && !speModules[i]->exitMaster(&cycle)) {
+      SPE_LOG_ERR("user module exitMaster Error");
+    }
   }
   // exit core module
   for (int i = speModuleNum - 1; i >= 0; i--) {
     if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
-    if (speModules[i]->exitMaster) speModules[i]->exitMaster(&cycle);
+    if (speModules[i]->exitMaster && !speModules[i]->exitMaster(&cycle)) {
+      SPE_LOG_ERR("core module exitMaster Error");
+    }
   }
   // destroy speOpt
   SpeOptDestroy();

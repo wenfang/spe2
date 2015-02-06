@@ -29,8 +29,8 @@ serverAccept(speServer_t* server) {
     SpeSockClose(cfd);
     return;
   }
-  conn->ReadCallback.Handler = SPE_HANDLER2(server->handler, conn, server->arg);
-  SpeTaskEnqueue(&conn->ReadCallback);
+  conn->PostReadTask.Handler = SPE_HANDLER2(server->handler, conn, server->arg);
+  SpeTaskEnqueue(&conn->PostReadTask);
 }
 
 /*
@@ -131,8 +131,8 @@ serverDeinit
 */
 static bool
 serverDeinit() {
-  speServer_t *server = NULL;
-  list_for_each_entry(server, &serverHead, serverNode) {
+  speServer_t *server, *tmp;
+  list_for_each_entry_safe(server, tmp, &serverHead, serverNode) {
     if (server->acceptMutex) SpeShmMutexDestroy(server->acceptMutex);
     SpeSockClose(server->sfd);
     free(server);

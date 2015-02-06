@@ -1,6 +1,7 @@
 #ifndef __SPE_RPC_H
 #define __SPE_RPC_H
 
+#include "spe_server.h"
 #include "spe_map.h"
 #include "spe_buf.h"
 #include "spe_conn.h"
@@ -13,7 +14,8 @@
 #define SPE_RPCMSG_MBULK  5
 
 typedef struct {
-  speMap_t* cmdMap;
+  speServer_t *server;
+  speMap_t    *cmdMap;
 } speRPC_t;
 
 typedef struct {

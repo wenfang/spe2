@@ -13,8 +13,8 @@ typedef struct {
   int       fd;
   speTask_t readTask;
   speTask_t writeTask;
-  speTask_t ReadCallback;
-  speTask_t WriteCallback;
+  speTask_t PostReadTask;
+  speTask_t PostWriteTask;
   unsigned  readExpireTime;
   unsigned  writeExpireTime;
   speBuf_t* ReadBuffer;
