@@ -19,15 +19,15 @@ typedef struct {
 } speRPC_t;
 
 typedef struct {
-  int           type;
-  speBufList_t* msg;
+  int         type;
+  speBufs_t*  msg;
 } speRPCResp_t;
 
 typedef struct {
   unsigned      status;
   int           paramLeft;
   int           dataLeft;
-  speBufList_t* request;
+  speBufs_t*    request;
   speRPCResp_t  response;
   speConn_t*    conn;
   speRPC_t*     rpc;

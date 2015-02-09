@@ -47,7 +47,7 @@ static inline bool
 SpeConnWrite(speConn_t* conn, char* buf, unsigned len) {
   ASSERT(conn && buf && len);
   if (conn->Closed || conn->Error) return false;
-  return SpeBufCat(conn->writeBuffer, buf, len);
+  return SpeBufAppend(conn->writeBuffer, buf, len);
 }
 
 extern bool

@@ -11,16 +11,16 @@ void TestCopy() {
 
 void TestCat() {
   speBuf_t* buf = SpeBufCreate();
-  SpeBufCat(buf, "test", strlen("test"));
-  SpeBufCat(buf, "test", strlen("test"));
-  SpeBufCat(buf, "test", strlen("test"));
-  SpeBufCat(buf, "test", strlen("test"));
-  SpeBufCat(buf, "test", strlen("test"));
-  SpeBufCat(buf, "test", strlen("test"));
-  SpeBufCat(buf, "test", strlen("test"));
-  SpeBufCat(buf, "test", strlen("test"));
-  SpeBufCat(buf, "test", strlen("test"));
-  SpeBufCat(buf, "test", strlen("test"));
+  SpeBufAppend(buf, "test", strlen("test"));
+  SpeBufAppend(buf, "test", strlen("test"));
+  SpeBufAppend(buf, "test", strlen("test"));
+  SpeBufAppend(buf, "test", strlen("test"));
+  SpeBufAppend(buf, "test", strlen("test"));
+  SpeBufAppend(buf, "test", strlen("test"));
+  SpeBufAppend(buf, "test", strlen("test"));
+  SpeBufAppend(buf, "test", strlen("test"));
+  SpeBufAppend(buf, "test", strlen("test"));
+  SpeBufAppend(buf, "test", strlen("test"));
   printf("TestCat: %s, %d, %d\n", buf->Data, buf->Len, buf->size);
   SpeBufDestroy(buf);
 }

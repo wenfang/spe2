@@ -21,7 +21,7 @@ static void process(speConn_t *conn, void* arg) {
 static void 
 infoHandle(speRPCConn_t* rpcConn) {
   rpcConn->response.type = SPE_RPCMSG_NUM;
-  SpeBufListAppend(rpcConn->response.msg, "10", 2);
+  SpeBufsAppend(rpcConn->response.msg, "10", 2);
   SpeRPCDone(rpcConn);
 }
 

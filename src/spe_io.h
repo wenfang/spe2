@@ -28,7 +28,7 @@ static inline bool
 SpeIOWrite(speIO_t* io, char* src, unsigned len) {
   ASSERT(io && src);
   if (io->Closed || io->Error) return false;
-  return SpeBufCat(io->writeBuffer, src, len);
+  return SpeBufAppend(io->writeBuffer, src, len);
 }
 
 extern int

@@ -20,11 +20,11 @@ bufExpand(speBuf_t* buf, unsigned len) {
 
 /*
 ===================================================================================================
-SpeBufCat
+SpeBufAppend
 ===================================================================================================
 */
 bool
-SpeBufCat(speBuf_t* buf, const char* src, unsigned len) {
+SpeBufAppend(speBuf_t* buf, const char* src, unsigned len) {
   ASSERT(buf && src);
   if (buf->size - buf->Len < len + 1) {
     if (!bufExpand(buf, buf->size+len+1)) return false;
@@ -239,11 +239,11 @@ SpeBufReadAppend(int fd, speBuf_t* buf, unsigned len) {
 SpeBufSplit
 ===================================================================================================
 */
-speBufList_t*
+speBufs_t*
 SpeBufSplit(speBuf_t* buf, const char* token) {
   ASSERT(buf && token);
-  speBufList_t* bufList = SpeBufListCreate();
-  if (!bufList) return NULL;
+  speBufs_t* bufs = SpeBufsCreate();
+  if (!bufs) return NULL;
   // split from left to right
   int start = 0;
   while (start < buf->Len) {
@@ -252,23 +252,23 @@ SpeBufSplit(speBuf_t* buf, const char* token) {
     if (!point) break;
     // add to string ignore null
     if (point != buf->Data + start) {
-      SpeBufListAppend(bufList, buf->Data + start, point - buf->Data - start);
+      SpeBufsAppend(bufs, buf->Data + start, point - buf->Data - start);
     }
     start = point - buf->Data + strlen(token);
   }
   if (buf->Len != start) {
-    SpeBufListAppend(bufList, buf->Data + start, buf->Len - start);  
+    SpeBufsAppend(bufs, buf->Data + start, buf->Len - start);  
   }
-  return bufList;
+  return bufs;
 }
 
 /*
 ===================================================================================================
-SpeBufListAppend
+SpeBufsAppend
 ===================================================================================================
 */
 bool 
-SpeBufListAppend(speBufList_t* bufList, char* src, unsigned len) {
+SpeBufsAppend(speBufs_t* bufList, char* src, unsigned len) {
   ASSERT(bufList && src);
   if (bufList->Len == bufList->size) {
     unsigned size = bufList->size;

@@ -26,12 +26,12 @@ static int checkToken(speConn_t* conn) {
 static void
 rpcProcess(speRPCConn_t* rpcConn) {
   SpeRPCHandler handle = SpeMapGet(rpcConn->rpc->cmdMap, (const char*)rpcConn->request->Data[0]->Data);
-  SpeBufListClean(rpcConn->response.msg);
+  SpeBufsClean(rpcConn->response.msg);
   if (handle) {
     handle(rpcConn);
   } else {
     rpcConn->response.type = SPE_RPCMSG_ERR;
-    SpeBufListAppend(rpcConn->response.msg, cmdNotSupportErr, strlen(cmdNotSupportErr));
+    SpeBufsAppend(rpcConn->response.msg, cmdNotSupportErr, strlen(cmdNotSupportErr));
     SpeRPCDone(rpcConn);
   }
 }
@@ -63,12 +63,12 @@ rpcParse(speRPCConn_t* rpcConn) {
       case RPC_PARSE_DATA: 
         if (pos > rpcConn->dataLeft) goto errout;
         if (pos < rpcConn->dataLeft) {
-          SpeBufListAppend(rpcConn->request, rpcConn->conn->ReadBuffer->Data, pos+2);
+          SpeBufsAppend(rpcConn->request, rpcConn->conn->ReadBuffer->Data, pos+2);
           SpeBufLConsume(rpcConn->conn->ReadBuffer, pos+2);
           rpcConn->dataLeft -= pos+2;
           break;
         }
-        SpeBufListAppend(rpcConn->request, rpcConn->conn->ReadBuffer->Data, pos);
+        SpeBufsAppend(rpcConn->request, rpcConn->conn->ReadBuffer->Data, pos);
         SpeBufLConsume(rpcConn->conn->ReadBuffer, pos+2);
         rpcConn->paramLeft--;
         if (rpcConn->paramLeft == 0) {
@@ -87,8 +87,8 @@ rpcParse(speRPCConn_t* rpcConn) {
 
 errout:
   SpeConnDestroy(rpcConn->conn);
-  SpeBufListDestroy(rpcConn->request);
-  SpeBufListDestroy(rpcConn->response.msg);
+  SpeBufsDestroy(rpcConn->request);
+  SpeBufsDestroy(rpcConn->response.msg);
   free(rpcConn);
   return;
 }
@@ -97,9 +97,9 @@ static void
 rpcHandler(speConn_t* conn, void* rpc) {
   speRPCConn_t* rpcConn = calloc(1, sizeof(speRPCConn_t));
   if (!rpcConn) goto errout1;
-  rpcConn->request = SpeBufListCreate();
+  rpcConn->request = SpeBufsCreate();
   if (!rpcConn->request) goto errout2;
-  rpcConn->response.msg = SpeBufListCreate();
+  rpcConn->response.msg = SpeBufsCreate();
   if (!rpcConn->response.msg) goto errout3;
 
   rpcConn->status = RPC_PARSE_STAR;
@@ -111,7 +111,7 @@ rpcHandler(speConn_t* conn, void* rpc) {
   return;
 
 errout3:
-  SpeBufListDestroy(rpcConn->request);
+  SpeBufsDestroy(rpcConn->request);
 errout2:
   free(rpcConn);
 errout1:
@@ -151,7 +151,7 @@ SpeRPCRegisteHandler(speRPC_t *rpc, const char* cmd, SpeRPCHandler handler) {
 void
 SpeRPCDone(speRPCConn_t* rpcConn) {
   char buf[1024] = {0};
-  speBufList_t* rspMsg = rpcConn->response.msg;
+  speBufs_t* rspMsg = rpcConn->response.msg;
   switch(rpcConn->response.type) {
     case SPE_RPCMSG_OK:
       SpeConnWrite(rpcConn->conn, "+", 1);
@@ -174,6 +174,6 @@ SpeRPCDone(speRPCConn_t* rpcConn) {
       break;
   }
   SpeConnFlush(rpcConn->conn);
-  SpeBufListClean(rpcConn->request);
+  SpeBufsClean(rpcConn->request);
   SpeConnRead(rpcConn->conn);
 }

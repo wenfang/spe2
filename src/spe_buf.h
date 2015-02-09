@@ -6,8 +6,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define DEFAULT_SIZE  128
-
 #define SPE_BUF_ERROR -2
 
 typedef struct {
@@ -21,10 +19,10 @@ typedef struct {
   speBuf_t**  Data; 
   unsigned    Len;    
   unsigned    size;
-} speBufList_t __attribute__((aligned(sizeof(long))));
+} speBufs_t __attribute__((aligned(sizeof(long))));
 
 extern bool 
-SpeBufCat(speBuf_t* buf, const char* src, unsigned len);
+SpeBufAppend(speBuf_t* buf, const char* src, unsigned len);
 
 extern bool
 SpeBufCopy(speBuf_t* buf, const char* src, unsigned len);
@@ -62,7 +60,7 @@ SpeBufToUpper(speBuf_t* buf);
 static inline void 
 SpeBufClean(speBuf_t* buf) {
   ASSERT(buf);
-  if (!buf->Data) return;
+  if (!buf->start) return;
   buf->Data     = buf->start;
   buf->Len      = 0;
   buf->Data[0]  = 0;
@@ -87,31 +85,31 @@ SpeBufDestroy(speBuf_t* buf) {
   free(buf);
 }
 
-static inline speBufList_t*
-SpeBufListCreate() {
-  return calloc(1, sizeof(speBufList_t));
+static inline speBufs_t*
+SpeBufsCreate() {
+  return calloc(1, sizeof(speBufs_t));
 }
 
 static inline void
-SpeBufListDestroy(speBufList_t* bufList) {
-  if (!bufList) return;
-  for (int i = 0; i < bufList->size; i++) {
-    if (bufList->Data[i]) SpeBufDestroy(bufList->Data[i]);
+SpeBufsDestroy(speBufs_t* bufs) {
+  if (!bufs) return;
+  for (int i = 0; i < bufs->size; i++) {
+    if (bufs->Data[i]) SpeBufDestroy(bufs->Data[i]);
   }
-  free(bufList->Data);
-  free(bufList);
+  free(bufs->Data);
+  free(bufs);
 }
 
 static inline void 
-SpeBufListClean(speBufList_t* bufList) {
-  ASSERT(bufList);
-  bufList->Len = 0;
+SpeBufsClean(speBufs_t* bufs) {
+  ASSERT(bufs);
+  bufs->Len = 0;
 }
 
-extern speBufList_t* 
+extern speBufs_t* 
 SpeBufSplit(speBuf_t* buf, const char* token);
 
 extern bool 
-SpeBufListAppend(speBufList_t* bufList, char* src, unsigned len);
+SpeBufsAppend(speBufs_t* bufs, char* src, unsigned len);
 
 #endif

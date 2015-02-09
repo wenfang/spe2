@@ -117,9 +117,9 @@ SpeOptCreate(const char* configFile) {
       continue;
     }
     // split key and value
-    speBufList_t* bufList = SpeBufSplit(line, "=");
+    speBufs_t* bufList = SpeBufSplit(line, "=");
     if (bufList->Len != 2) {
-      SpeBufListDestroy(bufList);
+      SpeBufsDestroy(bufList);
       SpeBufDestroy(line);
       SpeIODestroy(io);
       return false;
@@ -131,7 +131,7 @@ SpeOptCreate(const char* configFile) {
     SpeBufStrim(bufList->Data[1]);
     strncpy(val, bufList->Data[1]->Data, VAL_MAXLEN);
     val[VAL_MAXLEN-1] = 0;
-    SpeBufListDestroy(bufList);
+    SpeBufsDestroy(bufList);
     // set option value
     SpeOptSet(sec, key, val);
   }
