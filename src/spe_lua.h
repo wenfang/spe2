@@ -1,6 +1,7 @@
 #ifndef __SPE_LUA_H
 #define __SPE_LUA_H
 
+#include "spe_task.h"
 #include "spe_module.h"
 #include "lua.h"
 #include "lauxlib.h"
@@ -8,6 +9,7 @@
 
 typedef struct {
   lua_State *state;
+  speTask_t task;
 } SpeLuaThread_t;
 
 extern void

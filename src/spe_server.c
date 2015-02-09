@@ -85,7 +85,7 @@ SpeServerRegister(const char* addr, int port, SpeServerHandler handler, void* ar
   // create server
   speServer_t *server = calloc(1, sizeof(speServer_t));
   if (!server) {
-    SPE_LOG_ERR("speServer_t alloc error");
+    SPE_LOG_ERR("speServer_t calloc error");
     SpeSockClose(sfd);
     return NULL;
   }
