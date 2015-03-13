@@ -15,9 +15,10 @@ typedef struct {
   unsigned    mask:2;             // mask set in epoll
 } speEpoll_t __attribute__((aligned(sizeof(long))));
 
-static int        epfd;
-static int        epoll_maxfd;
-static speEpoll_t *all_epoll;
+static int        				epfd;
+static int        				epoll_maxfd;
+static speEpoll_t 				*all_epoll;
+static struct epoll_event *epEvents;
 
 /*
 ===================================================================================================
@@ -85,7 +86,6 @@ SpeEpollProcess
 */
 void
 SpeEpollProcess(int timeout) {
-  struct epoll_event epEvents[epoll_maxfd];
   int events_n = epoll_wait(epfd, epEvents, epoll_maxfd, timeout);
   if (unlikely(events_n < 0)) {
     if (errno == EINTR) return;
@@ -126,11 +126,17 @@ epollInit(speCycle_t *cycle) {
   epfd = epoll_create(10240);
   if (epfd < 0) return false;
   epoll_maxfd = cycle->maxfd;
-  all_epoll = calloc(1, sizeof(speEpoll_t)*epoll_maxfd);
+  all_epoll = calloc(epoll_maxfd, sizeof(speEpoll_t));
   if (!all_epoll) {
     close(epfd);
     return false;
   }
+	epEvents = calloc(epoll_maxfd, sizeof(struct epoll_event));
+	if (!epEvents) {
+		free(all_epoll);
+		close(epfd);
+		return false;
+	}
   return true;
 }
 
@@ -143,6 +149,7 @@ static bool
 epollExit(speCycle_t *cycle) {
   close(epfd);
   free(all_epoll);
+	free(epEvents);
   return true;
 }
 
