@@ -74,3 +74,69 @@ SpeRemovePid(const char* pid_file) {
   if (unlink(pid_file)) return false;
   return true;
 }
+
+extern char** environ;
+
+static char** speArgv;
+static char* speArgvLast = NULL;
+
+/*
+===================================================================================================
+SpeInitProctitle
+===================================================================================================
+*/
+bool
+SpeInitProctitle(int argc, char** argv) {
+	/*
+	speArgv = calloc(1, (argc+1)*sizeof(char*));
+	if (speArgv == NULL) return false;
+
+	size_t len = 0;
+	for (int i=0; i<argc; i++) {
+		len = strlen(argv[i]) + 1;
+		speArgv[i] = calloc(1, len);
+		if (speArgv[i] == NULL) return false;
+		strncpy(speArgv[i], argv[i], len);
+	}
+	speArgv[argc] = NULL;
+	*/
+	speArgv = argv;
+
+	size_t size = 0;
+	for (int i=0; environ[i]; i++) {
+		size += strlen(environ[i]) + 1;
+	}
+
+	char* p = calloc(1, size);
+	if (p == NULL) return false;
+
+	speArgvLast =  speArgv[0];
+	for (int i=0; speArgv[i]; i++) {
+		if (speArgvLast == speArgv[i]) speArgvLast = speArgv[i] + strlen(speArgv[i]) + 1;
+	}
+
+	for (int i=0; environ[i]; i++) {
+		if (speArgvLast == environ[i]) {
+			size = strlen(environ[i]) + 1;
+			speArgvLast = environ[i] + size;
+			strncpy(p, environ[i], size);
+			environ[i] = p;
+			p += size;
+		}
+	}
+
+	speArgvLast--;
+
+	return true;
+}
+
+/*
+===================================================================================================
+SpeSetProcTitle
+===================================================================================================
+*/
+void
+SpeSetProctitle(char* title) {
+	speArgv[1] = NULL;
+	strncpy(speArgv[0], title, speArgvLast - speArgv[0]);
+}

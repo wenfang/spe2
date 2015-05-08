@@ -62,4 +62,9 @@ SpeGetPid(const char* pid_file);
 extern bool
 SpeRemovePid(const char* pid_file);
 
+extern bool
+SpeInitProctitle(int argc, char** argv);
+
+extern void
+SpeSetProctitle(char* title);
 #endif

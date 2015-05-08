@@ -18,6 +18,7 @@ static void stopWorker(int sig) {
 static void
 SpeMasterProcess() {
   SpeSavePid(cycle.pidfile);
+	SpeSetProctitle("spe: master");
 
   SpeSignalRegister(SIGPIPE, SIG_IGN);
   SpeSignalRegister(SIGHUP, SIG_IGN);
@@ -73,6 +74,7 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "[ERROR] Config File Parse Error\n");
     return 1;
   }
+	SpeInitProctitle(argc, argv);
   // init modules index, get speModuleNum
   if (!speModuleInit()) {
     fprintf(stderr, "[ERROR] speModuleInit Error\n");

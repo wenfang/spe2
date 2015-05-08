@@ -116,6 +116,7 @@ static void workerCtrlHandler() {
 
 void
 SpeWorkerProcess() {
+	SpeSetProctitle("spe: worker");
   SpeSignalRegister(SIGPIPE, SIG_IGN);
   SpeSignalRegister(SIGHUP, SIG_IGN);
   SpeSignalRegister(SIGCHLD, SIG_IGN);

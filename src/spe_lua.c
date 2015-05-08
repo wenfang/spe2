@@ -23,18 +23,20 @@ SpeLuaThread(const char* fname) {
 
 static bool
 luaInit(speCycle_t *cycle) {
+/*
   L = luaL_newstate();
   if (!L) {
     SPE_LOG_ERR("luaL_newstate error");
     return false;
   }
   luaL_openlibs(L);
+*/
   return true;
 }
 
 static bool
 luaExit(speCycle_t *cycle) {
-  lua_close(L);
+//  lua_close(L);
   return true;
 }
 
