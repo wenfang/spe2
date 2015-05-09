@@ -22,11 +22,11 @@ static struct epoll_event *epEvents;
 
 /*
 ===================================================================================================
-epollChange
+epoll_change
 ===================================================================================================
 */
 static bool
-epollChange(unsigned fd, speEpoll_t* epoll_t, unsigned newmask) {
+epoll_change(unsigned fd, speEpoll_t* epoll_t, unsigned newmask) {
   if (epoll_t->mask == newmask) return true;
   // set epoll_event 
   struct epoll_event ee;
@@ -62,7 +62,7 @@ SpeEpollEnable(unsigned fd, unsigned mask, speTask_t* task) {
   speEpoll_t* epoll_t = &all_epoll[fd];
   if (mask & SPE_EPOLL_READ) epoll_t->readTask = task;
   if (mask & SPE_EPOLL_WRITE) epoll_t->writeTask = task;
-  return epollChange(fd, epoll_t, epoll_t->mask | mask);
+  return epoll_change(fd, epoll_t, epoll_t->mask | mask);
 }
 
 /*
@@ -76,7 +76,7 @@ SpeEpollDisable(unsigned fd, unsigned mask) {
   speEpoll_t* epoll_t = &all_epoll[fd];
   if (mask & SPE_EPOLL_READ) epoll_t->readTask = NULL;
   if (mask & SPE_EPOLL_WRITE) epoll_t->writeTask = NULL;
-  return epollChange(fd, epoll_t, epoll_t->mask & (~mask));
+  return epoll_change(fd, epoll_t, epoll_t->mask & (~mask));
 }
 
 /*
@@ -100,18 +100,10 @@ SpeEpollProcess(int timeout) {
     e = &epEvents[i];
     epoll_t = &all_epoll[e->data.fd];
     if ((e->events & EPOLLIN) && (epoll_t->mask & SPE_EPOLL_READ)) {
-      if (unlikely(epoll_t->readTask->flag == SPE_TASK_FAST)) {
-        SPE_HANDLER_CALL(epoll_t->readTask->Handler);
-      } else {
-        SpeTaskEnqueue(epoll_t->readTask);
-      }
+      SpeTaskEnqueue(epoll_t->readTask);
     }
     if ((e->events & EPOLLOUT) && (epoll_t->mask & SPE_EPOLL_WRITE)) {
-      if (unlikely(epoll_t->writeTask->flag == SPE_TASK_FAST)) {
-        SPE_HANDLER_CALL(epoll_t->writeTask->Handler);
-      } else {
-        SpeTaskEnqueue(epoll_t->writeTask);
-      }
+      SpeTaskEnqueue(epoll_t->writeTask);
     }
   }
 }
@@ -124,7 +116,10 @@ epollInit
 static bool
 epollInit(speCycle_t *cycle) {
   epfd = epoll_create(10240);
-  if (epfd < 0) return false;
+  if (epfd < 0) {
+    SPE_LOG_ERR("epoll_create: %s", strerror(errno));
+    return false;
+  }
   epoll_maxfd = cycle->maxfd;
   all_epoll = calloc(epoll_maxfd, sizeof(speEpoll_t));
   if (!all_epoll) {

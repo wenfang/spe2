@@ -131,7 +131,7 @@ SpeWorkerProcess() {
     if (speModules[i]->initWorker) speModules[i]->initWorker(&cycle);
   }
   // enable control task
-  SpeTaskInit(&controlTask, SPE_TASK_FAST);
+  spe_task_init(&controlTask, SPE_TASK_FAST);
   controlTask.Handler = SPE_HANDLER0(workerCtrlHandler);
   SpeEpollEnable(controlFd, SPE_EPOLL_READ, &controlTask);
   // event loop

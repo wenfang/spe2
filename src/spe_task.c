@@ -18,11 +18,11 @@ static struct rb_root   timer_head;
 
 /*
 ===================================================================================================
-SpeTaskInit
+spe_task_init
 ===================================================================================================
 */
 void
-SpeTaskInit(speTask_t* task, unsigned flag) {
+spe_task_init(speTask_t* task, unsigned flag) {
   ASSERT(task);
   task->Handler = SPE_HANDLER_NULL;
   task->expire  = 0;
@@ -41,6 +41,10 @@ SpeTaskEnqueue
 bool
 SpeTaskEnqueue(speTask_t* task) {
   ASSERT(task);
+  if (unlikely(task->flag == SPE_TASK_FAST)) {
+    SPE_HANDLER_CALL(task->Handler);
+    return true;
+  }
   if (task->status == SPE_TASK_QUEUE) return false;
   if (task->status == SPE_TASK_TIMER) {
     rb_erase(&task->timerNode, &timer_head);
@@ -113,6 +117,12 @@ SpeTaskDequeueTimer(speTask_t* task) {
   return true;
 }
 
+bool
+spe_task_dequeue(speTask_t* task) {
+  ASSERT(task);
+  return true;
+}
+
 /*
 ===================================================================================================
 SpeTaskProcess
@@ -155,7 +165,7 @@ SpeTaskProcess(void) {
 }
 
 static bool
-taskInit(speCycle_t *cycle) {
+task_module_init(speCycle_t *cycle) {
   timer_head = RB_ROOT;
   return true;
 }
@@ -165,7 +175,7 @@ speModule_t speTaskModule = {
   0,
   SPE_CORE_MODULE,
   NULL,
-  taskInit,
+  task_module_init,
   NULL,
   NULL, 
 };

@@ -15,13 +15,17 @@
 #define SPE_LOG_INFO(fmt, arg...)      spe_log_write(LOG_INFO|LOG_LOCAL6, "[%s:%d][%d][%x][INFO]: "#fmt, __FILE__, __LINE__, getpid(), pthread_self(), ##arg)
 #define SPE_LOG_DEBUG(fmt, arg...)     spe_log_write(LOG_DEBUG|LOG_LOCAL6, "[%s:%d][%d][%x][DEBUG]: "#fmt, __FILE__, __LINE__, getpid(), pthread_self(), ##arg) 
 
-extern void 
-spe_log_init(const char* name);
+static inline void 
+spe_log_init(const char* name) {
+  openlog(name, LOG_CONS|LOG_PID, LOG_LOCAL6);
+}
 
 extern void 
 spe_log_write(int priority, const char* message, ...);
 
-extern void 
-spe_log_close();
+static inline void 
+spe_log_close() {
+  closelog();
+}
 
 #endif

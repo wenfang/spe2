@@ -21,7 +21,7 @@ typedef struct speTask_s {
 } speTask_t __attribute__((aligned(sizeof(long))));
 
 extern void
-SpeTaskInit(speTask_t* task, unsigned flag);
+spe_task_init(speTask_t* task, unsigned flag);
 
 extern bool 
 SpeTaskEnqueue(speTask_t* task);

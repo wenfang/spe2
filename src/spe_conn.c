@@ -334,10 +334,10 @@ connInitialize
 static bool
 connInitialize(speConn_t* conn, unsigned fd) {
   conn->fd = fd;
-  SpeTaskInit(&conn->readTask, SPE_TASK_NORM);
-  SpeTaskInit(&conn->writeTask, SPE_TASK_NORM);
-  SpeTaskInit(&conn->PostReadTask, SPE_TASK_NORM);
-  SpeTaskInit(&conn->PostWriteTask, SPE_TASK_NORM);
+  spe_task_init(&conn->readTask, SPE_TASK_NORM);
+  spe_task_init(&conn->writeTask, SPE_TASK_NORM);
+  spe_task_init(&conn->PostReadTask, SPE_TASK_NORM);
+  spe_task_init(&conn->PostWriteTask, SPE_TASK_NORM);
   conn->ReadBuffer  = SpeBufCreate();
   conn->writeBuffer = SpeBufCreate();
   if (!conn->ReadBuffer || !conn->writeBuffer) {

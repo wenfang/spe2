@@ -67,4 +67,5 @@ SpeInitProctitle(int argc, char** argv);
 
 extern void
 SpeSetProctitle(char* title);
+
 #endif

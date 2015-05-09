@@ -92,7 +92,7 @@ SpeServerRegister(const char* addr, int port, SpeServerHandler handler, void* ar
   server->sfd     = sfd;
   server->handler = handler;
   server->arg     = arg;
-  SpeTaskInit(&server->listenTask, SPE_TASK_FAST);
+  spe_task_init(&server->listenTask, SPE_TASK_FAST);
   server->listenTask.Handler = SPE_HANDLER1(serverAccept, server);
   server->acceptMutex = SpeShmMutexCreate();
   if (!server->acceptMutex) {
