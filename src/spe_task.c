@@ -9,7 +9,6 @@
 #define SPE_TASK_FREE   0   // task is alloc not in queue
 #define SPE_TASK_TIMER  1   // task in timer queue
 #define SPE_TASK_QUEUE  2   // task in running queue
-#define SPE_TASK_RUN    3   // task is running
 
 int speTaskNum;             // task num in running queue
 
@@ -35,20 +34,20 @@ spe_task_init(speTask_t* task, unsigned flag) {
 
 /*
 ===================================================================================================
-SpeTaskEnqueue
+spe_task_schedule
 ===================================================================================================
 */
 bool
-SpeTaskEnqueue(speTask_t* task) {
+spe_task_schedule(speTask_t* task) {
   ASSERT(task);
-  if (unlikely(task->flag == SPE_TASK_FAST)) {
-    SPE_HANDLER_CALL(task->Handler);
-    return true;
-  }
   if (task->status == SPE_TASK_QUEUE) return false;
   if (task->status == SPE_TASK_TIMER) {
     rb_erase(&task->timerNode, &timer_head);
     rb_init_node(&task->timerNode);
+  }
+  if (unlikely(task->flag == SPE_TASK_FAST)) {
+    SPE_HANDLER_CALL(task->Handler);
+    return true;
   }
   list_add_tail(&task->taskNode, &task_head);
   task->status = SPE_TASK_QUEUE;
@@ -58,26 +57,11 @@ SpeTaskEnqueue(speTask_t* task) {
 
 /*
 ===================================================================================================
-SpeTaskDequeue
+spe_task_schedule_timeout
 ===================================================================================================
 */
 bool
-SpeTaskDequeue(speTask_t* task) {
-  ASSERT(task);
-  if (task->status != SPE_TASK_QUEUE) return false;
-  list_del_init(&task->taskNode);
-  task->status = SPE_TASK_FREE;
-  speTaskNum--;
-  return true;
-}
-
-/*
-===================================================================================================
-SpeTaskEnqueueTimer
-===================================================================================================
-*/
-bool
-SpeTaskEnqueueTimer(speTask_t* task, unsigned long ms) {
+spe_task_schedule_timeout(speTask_t* task, unsigned long ms) {
   ASSERT(task);
   if (task->status == SPE_TASK_QUEUE) return false;
   if (task->status == SPE_TASK_TIMER) {
@@ -104,32 +88,34 @@ SpeTaskEnqueueTimer(speTask_t* task, unsigned long ms) {
 
 /*
 ===================================================================================================
-SpeTaskDequeueTimer
+spe_task_dequeue
 ===================================================================================================
 */
 bool
-SpeTaskDequeueTimer(speTask_t* task) {
-  ASSERT(task);
-  if (task->status != SPE_TASK_TIMER) return false;
-  rb_erase(&task->timerNode, &timer_head);
-  rb_init_node(&task->timerNode);
-  task->status = SPE_TASK_FREE;
-  return true;
-}
-
-bool
 spe_task_dequeue(speTask_t* task) {
   ASSERT(task);
-  return true;
+  if (task->status == SPE_TASK_QUEUE) {
+    list_del_init(&task->taskNode);
+    task->status = SPE_TASK_FREE;
+    speTaskNum--;
+    return true;
+  } 
+  if (task->status == SPE_TASK_TIMER) {
+    rb_erase(&task->timerNode, &timer_head);
+    rb_init_node(&task->timerNode);
+    task->status = SPE_TASK_FREE;
+    return true; 
+  }
+  return false;
 }
 
 /*
 ===================================================================================================
-SpeTaskProcess
+spe_task_process
 ===================================================================================================
 */
 void
-SpeTaskProcess(void) {
+spe_task_process(void) {
   // check timer queue
   if (!RB_EMPTY_ROOT(&timer_head)) {
     unsigned long curr_time = SpeCurrentTime();
@@ -157,10 +143,8 @@ SpeTaskProcess(void) {
     list_del_init(&task->taskNode);
     speTaskNum--;
     ASSERT(speTaskNum >= 0);
-    task->status = SPE_TASK_RUN;
+    task->status = SPE_TASK_FREE;
     SPE_HANDLER_CALL(task->Handler);
-    // set task stauts to free
-    if (task->status == SPE_TASK_RUN) task->status = SPE_TASK_FREE;
   }
 }
 

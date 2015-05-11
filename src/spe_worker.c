@@ -141,7 +141,7 @@ SpeWorkerProcess() {
     SpeServerPreLoop();
     SpeEpollProcess(timeout);
     SpeServerPostLoop();
-    SpeTaskProcess();
+    spe_task_process();
     SpeSignalProcess();
   }
   // disable control task

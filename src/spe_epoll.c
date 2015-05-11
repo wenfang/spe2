@@ -100,10 +100,10 @@ SpeEpollProcess(int timeout) {
     e = &epEvents[i];
     epoll_t = &all_epoll[e->data.fd];
     if ((e->events & EPOLLIN) && (epoll_t->mask & SPE_EPOLL_READ)) {
-      SpeTaskEnqueue(epoll_t->readTask);
+      spe_task_schedule(epoll_t->readTask);
     }
     if ((e->events & EPOLLOUT) && (epoll_t->mask & SPE_EPOLL_WRITE)) {
-      SpeTaskEnqueue(epoll_t->writeTask);
+      spe_task_schedule(epoll_t->writeTask);
     }
   }
 }

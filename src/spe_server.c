@@ -30,7 +30,7 @@ serverAccept(speServer_t* server) {
     return;
   }
   conn->PostReadTask.Handler = SPE_HANDLER2(server->handler, conn, server->arg);
-  SpeTaskEnqueue(&conn->PostReadTask);
+  spe_task_schedule(&conn->PostReadTask);
 }
 
 /*

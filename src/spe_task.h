@@ -10,7 +10,7 @@
 #define SPE_TASK_NORM 0
 #define SPE_TASK_FAST 1
 
-typedef struct speTask_s {
+typedef struct spe_task_s {
   speHandler_t      Handler;
   struct rb_node    timerNode;
   struct list_head  taskNode;
@@ -24,19 +24,16 @@ extern void
 spe_task_init(speTask_t* task, unsigned flag);
 
 extern bool 
-SpeTaskEnqueue(speTask_t* task);
+spe_task_schedule(speTask_t* task);
 
 extern bool
-SpeTaskDequeue(speTask_t* task);
+spe_task_schedule_timeout(speTask_t* task, unsigned long ms);
 
 extern bool
-SpeTaskEnqueueTimer(speTask_t* task, unsigned long ms);
-
-extern bool
-SpeTaskDequeueTimer(speTask_t* task);
+spe_task_dequeue(speTask_t* task);
 
 extern void
-SpeTaskProcess(void);
+spe_task_process(void);
 
 extern int speTaskNum;
 
