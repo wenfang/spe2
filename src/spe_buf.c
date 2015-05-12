@@ -2,291 +2,279 @@
 #include <stdio.h>
 
 static bool
-bufExpand(speBuf_t* buf, unsigned len) {
-  if (buf->Data != buf->start) {
-    memmove(buf->start, buf->Data, buf->Len);
-    buf->Data[buf->Len] = 0;
+buf_expand(spe_buf_t* buf, unsigned len) {
+  if (buf->data != buf->_start) {
+    memmove(buf->_start, buf->data, buf->len);
+    buf->data           = buf->_start;
+    buf->data[buf->len] = 0;
   }
 
-  unsigned newsize = 25 * len / 16;
-  char* newstart = realloc(buf->start, newsize);
-  if (!newstart) return false;
+  unsigned new_size = 25 * len / 16;
+  char* new_start = realloc(buf->_start, new_size);
+  if (new_start == NULL) return false;
 
-  buf->start  = newstart;
-  buf->Data   = buf->start;
-  buf->size   = newsize;
+  buf->_start = new_start;
+  buf->_size  = new_size;
+  buf->data   = buf->_start;
   return true;
 }
 
 /*
 ===================================================================================================
-SpeBufAppend
+spe_buf_append
 ===================================================================================================
 */
 bool
-SpeBufAppend(speBuf_t* buf, const char* src, unsigned len) {
+spe_buf_append(spe_buf_t* buf, const char* src, unsigned len) {
   ASSERT(buf && src);
-  if (buf->size - buf->Len < len + 1) {
-    if (!bufExpand(buf, buf->size+len+1)) return false;
+  if (buf->_size - buf->len < len + 1) {
+    if (!buf_expand(buf, buf->_size + len + 1)) return false;
   }
-  if (buf->size - buf->Len - (buf->Data - buf->start) < len + 1) {
-    memmove(buf->start, buf->Data, buf->Len);
-    buf->Data = buf->start;
+  if (buf->_size - buf->len - (buf->data - buf->_start) < len + 1) {
+    memmove(buf->_start, buf->data, buf->len);
+    buf->data           = buf->_start;
+    buf->data[buf->len] = 0;
   }
-  memcpy(buf->Data + buf->Len, src, len);            
-  buf->Len += len;
-  buf->Data[buf->Len] = 0;
+  memcpy(buf->data + buf->len, src, len);            
+  buf->len += len;
+  buf->data[buf->len] = 0;
   return true;
 }
 
 /*
 ===================================================================================================
-SpeBufCopy
+spe_buf_copy
 ===================================================================================================
 */
 bool 
-SpeBufCopy(speBuf_t* buf, const char* src, unsigned len) {
+spe_buf_copy(spe_buf_t* buf, const char* src, unsigned len) {
   ASSERT(buf && src);
-  if (buf->size < len + 1) {
-    if (!bufExpand(buf, len+1)) return false;
+  if (buf->_size < len + 1) {
+    if (!buf_expand(buf, len+1)) return false;
   }
-  memcpy(buf->start, src, len);
-  buf->Data           = buf->start;
-  buf->Len            = len;
-  buf->Data[buf->Len] = 0;
+  memcpy(buf->_start, src, len);
+  buf->data           = buf->_start;
+  buf->len            = len;
+  buf->data[buf->len] = 0;
   return true;
 }
 
 /*
 ===================================================================================================
-SpeBufLConsume
+spe_buf_lconsume
 ===================================================================================================
 */
-int 
-SpeBufLConsume(speBuf_t* buf, unsigned len) {
+void
+spe_buf_lconsume(spe_buf_t* buf, unsigned len) {
   ASSERT(buf);
-  if (len >= buf->Len) {
-    len = buf->Len;
-    SpeBufClean(buf);
-    return len; 
-  }
-  buf->Data           += len;
-  buf->Len            -= len;
-  buf->Data[buf->Len] = 0;
-  return len;
+  if (len > buf->len) len = buf->len;
+  buf->data           += len;
+  buf->len            -= len;
+  buf->data[buf->len] = 0;
 }
 
 /*
 ===================================================================================================
-SpeBufRConsume
+spe_buf_rconsume
 ===================================================================================================
 */
-int 
-SpeBufRConsume(speBuf_t* buf, unsigned len) {
+void
+spe_buf_rconsume(spe_buf_t* buf, unsigned len) {
   ASSERT(buf);
-  if (len >= buf->Len) {
-    len = buf->Len;
-    SpeBufClean(buf);
-    return len;
-  }
-  buf->Len -= len;
-  buf->Data[buf->Len] = 0;
-  return len;
+  if (len >= buf->len) len = buf->len;
+  buf->len            -= len;
+  buf->data[buf->len] = 0;
 }
 
 /*
 ===================================================================================================
-SpeBufSearch
+spe_buf_search
     search string in x
-    return startpositon in x
+    return _startpositon in x
             -1 for no found or error
 ===================================================================================================
 */
 int 
-SpeBufSearch(speBuf_t* buf, const char* key) {
+spe_buf_search(spe_buf_t* buf, const char* key) {
   ASSERT(buf && key);
-  if (!buf->Len) return -1;
-  char* point = strstr(buf->Data, key);
+  if (!buf->len) return -1;
+  char* point = strstr(buf->data, key);
   if (!point) return -1;
-  return point - buf->Data;
+  return point - buf->data;
 }
 
 /*
 ===================================================================================================
-SpeBufLStrim
+spe_buf_lstrim
   strim string from left
 ===================================================================================================
 */
 void 
-SpeBufLStrim(speBuf_t* buf) {
-  ASSERT(buf);
+spe_buf_lstrim(spe_buf_t* buf, char* token) {
+  ASSERT(buf && token);
   int pos;
-  for (pos = 0; pos < buf->Len; pos++) {
-    if (buf->Data[pos] == '\t' || buf->Data[pos] == ' ' ||
-        buf->Data[pos] == '\r' || buf->Data[pos] == '\n') continue;
-    break;
+  for (pos = 0; pos < buf->len; pos++) {
+    if (!strchr(token, buf->data[pos])) break;
   }
-  if (pos) SpeBufLConsume(buf, pos);
+  if (pos) spe_buf_lconsume(buf, pos);
 }
 
 /*
 ===================================================================================================
-SpeBufRStrim
+spe_buf_rstrim
   strim string from right
 ===================================================================================================
 */
 void 
-SpeBufRStrim(speBuf_t* buf) {
-  ASSERT(buf);
+spe_buf_rstrim(spe_buf_t* buf, char* token) {
+  ASSERT(buf && token);
   int pos;
-  for (pos = buf->Len-1; pos >= 0; pos--) {
-    if (buf->Data[pos] == '\t' || buf->Data[pos] == ' ' ||
-        buf->Data[pos] == '\r' || buf->Data[pos] == '\n') continue;
-    break;
+  for (pos = buf->len-1; pos >= 0; pos--) {
+    if (!strchr(token, buf->data[pos])) break;
   }
-  buf->Len            = pos + 1;
-  buf->Data[buf->Len] = 0;
+  buf->len            = pos + 1;
+  buf->data[buf->len] = 0;
 }
 
 /*
 ===================================================================================================
-SpeBufCmp
+spe_buf_cmp
   compare two speBuf
 ===================================================================================================
 */
 int 
-SpeBufCmp(speBuf_t* buf1, speBuf_t* buf2) {
+spe_buf_cmp(spe_buf_t* buf1, spe_buf_t* buf2) {
   ASSERT(buf1 && buf2);
-  int minlen = (buf1->Len > buf2->Len) ? buf2->Len : buf1->Len;
-  int ret = memcmp(buf1->Data, buf2->Data, minlen);
+  int minlen = (buf1->len > buf2->len) ? buf2->len : buf1->len;
+  int ret = memcmp(buf1->data, buf2->data, minlen);
   if (ret) return ret;
   // length is equal  
-  if (buf1->Len == buf2->Len) return 0;
-  if (buf1->Len > buf2->Len) return 1;
+  if (buf1->len == buf2->len) return 0;
+  if (buf1->len > buf2->len) return 1;
   return -1;
 }
 
 /*
 ===================================================================================================
-SpeBufToLower
+spe_buf_to_lower
   change buf to lower
 ===================================================================================================
 */
 void
-SpeBufToLower(speBuf_t* buf) {
+spe_buf_to_lower(spe_buf_t* buf) {
   ASSERT(buf);
-  for (int i=0; i<buf->Len; i++) {
-    if (buf->Data[i]>='A' && buf->Data[i]<='Z') buf->Data[i] += 32;
+  for (int i=0; i<buf->len; i++) {
+    if (buf->data[i]>='A' && buf->data[i]<='Z') buf->data[i] += 32;
   }
 }
 
 /*
 ===================================================================================================
-SpeBufToUpper
+spe_buf_to_upper
   change buf to upper
 ===================================================================================================
 */
 void
-SpeBufToUpper(speBuf_t* buf) {
+spe_buf_to_upper(spe_buf_t* buf) {
   ASSERT(buf);
-  for (int i=0; i <buf->Len; i++) {
-    if (buf->Data[i]>='a' && buf->Data[i]<='z') buf->Data[i] -= 32;
+  for (int i=0; i <buf->len; i++) {
+    if (buf->data[i]>='a' && buf->data[i]<='z') buf->data[i] -= 32;
   }
 }
 
 /*
 ===================================================================================================
-SpeBufRead
+spe_buf_read_fd_copy
 ===================================================================================================
 */
 int
-SpeBufRead(int fd, speBuf_t* buf, unsigned len) {
+spe_buf_read_fd_copy(int fd, unsigned len, spe_buf_t* buf) {
   ASSERT(buf);
-  if (buf->size < len + 1) {
-    if (!bufExpand(buf, len+1)) return SPE_BUF_ERROR;
+  if (buf->_size < len + 1) {
+    if (!buf_expand(buf, len+1)) return SPE_BUF_ERROR;
   }
-  int res = read(fd, buf->start, buf->size - 1);
+  int res = read(fd, buf->_start, buf->_size - 1);
   if (res <= 0) return res;
-  buf->Data           = buf->start;
-  buf->Len            = res;
-  buf->Data[buf->Len] = 0;
+  buf->data           = buf->_start;
+  buf->len            = res;
+  buf->data[buf->len] = 0;
   return res;
 }
 
 /*
 ===================================================================================================
-SpeBufReadAppend
+spe_buf_read_fd_append
 ===================================================================================================
 */
 int
-SpeBufReadAppend(int fd, speBuf_t* buf, unsigned len) {
+spe_buf_read_fd_append(int fd, unsigned len, spe_buf_t* buf) {
   ASSERT(buf);
-  if (buf->size - buf->Len < len + 1) {
-    if (!bufExpand(buf, buf->size+len+1)) return SPE_BUF_ERROR;
+  if (buf->_size - buf->len < len + 1) {
+    if (!buf_expand(buf, buf->_size+len+1)) return SPE_BUF_ERROR;
   }
-  if (buf->Data != buf->start) {
-    memmove(buf->start, buf->Data, buf->Len);
+  if (buf->data != buf->_start) {
+    memmove(buf->_start, buf->data, buf->len);
   }
-  int res = read(fd, buf->Data+buf->Len, buf->size - buf->Len - 1);
+  int res = read(fd, buf->data+buf->len, buf->_size - buf->len - 1);
   if (res <= 0) return res;
-  buf->Len            += res;
-  buf->Data[buf->Len] = 0;
+  buf->len            += res;
+  buf->data[buf->len] = 0;
   return res;
 }
 
 /*
 ===================================================================================================
-SpeBufSplit
+spe_buf_split
 ===================================================================================================
 */
-speBufs_t*
-SpeBufSplit(speBuf_t* buf, const char* token) {
+spe_bufs_t*
+spe_buf_split(spe_buf_t* buf, const char* token) {
   ASSERT(buf && token);
-  speBufs_t* bufs = SpeBufsCreate();
+  spe_bufs_t* bufs = spe_bufs_create();
   if (!bufs) return NULL;
   // split from left to right
   int start = 0;
-  while (start < buf->Len) {
+  while (start < buf->len) {
     // split one by one
-    char* point = strstr(buf->Data + start, token);
+    char* point = strstr(buf->data + start, token);
     if (!point) break;
     // add to string ignore null
-    if (point != buf->Data + start) {
-      SpeBufsAppend(bufs, buf->Data + start, point - buf->Data - start);
+    if (point != buf->data + start) {
+      spe_bufs_append(bufs, buf->data + start, point - buf->data - start);
     }
-    start = point - buf->Data + strlen(token);
+    start = point - buf->data + strlen(token);
   }
-  if (buf->Len != start) {
-    SpeBufsAppend(bufs, buf->Data + start, buf->Len - start);  
+  if (buf->len != start) {
+    spe_bufs_append(bufs, buf->data + start, buf->len - start);  
   }
   return bufs;
 }
 
 /*
 ===================================================================================================
-SpeBufsAppend
+spe_bufs_append
 ===================================================================================================
 */
 bool 
-SpeBufsAppend(speBufs_t* bufList, char* src, unsigned len) {
+spe_bufs_append(spe_bufs_t* bufList, char* src, unsigned len) {
   ASSERT(bufList && src);
-  if (bufList->Len == bufList->size) {
-    unsigned size = bufList->size;
-    bufList->size = 16 + bufList->size;
-    speBuf_t** newdata = realloc(bufList->Data, bufList->size*sizeof(speBuf_t*));
+  if (bufList->len == bufList->_size) {
+    unsigned _size = bufList->_size;
+    bufList->_size = 16 + bufList->_size;
+    spe_buf_t** newdata = realloc(bufList->data, bufList->_size*sizeof(spe_buf_t*));
     if (!newdata) {
-      bufList->size = size;
+      bufList->_size = _size;
       return false;
     }
-    bufList->Data = newdata;
-    for (int i=bufList->Len; i<bufList->size; i++) bufList->Data[i] = NULL;
+    bufList->data = newdata;
+    for (int i=bufList->len; i<bufList->_size; i++) bufList->data[i] = NULL;
   }
   // copy string
-  if (!bufList->Data[bufList->Len]) {
-    bufList->Data[bufList->Len] = SpeBufCreate(0);
-    if (!bufList->Data[bufList->Len]) return false;
+  if (!bufList->data[bufList->len]) {
+    bufList->data[bufList->len] = spe_buf_create(0);
+    if (!bufList->data[bufList->len]) return false;
   }
-  SpeBufCopy(bufList->Data[bufList->Len], src, len);
-  bufList->Len++;
+  spe_buf_copy(bufList->data[bufList->len], src, len);
+  bufList->len++;
   return true;
 }

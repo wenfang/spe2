@@ -6,21 +6,20 @@
 #define SPE_CORE_MODULE 1
 #define SPE_USER_MODULE 2
 
-typedef struct {
+typedef struct spe_module_s {
   const char* name;
   int         index;
   int         moduleType;
 
-  bool  (*initMaster)(speCycle_t*);
-  bool  (*initWorker)(speCycle_t*);
-  bool  (*exitWorker)(speCycle_t*);
-  bool  (*exitMaster)(speCycle_t*);
-} speModule_t;
+  bool  (*init_master)(spe_cycle_t*);
+  bool  (*init_worker)(spe_cycle_t*);
+  bool  (*exit_worker)(spe_cycle_t*);
+  bool  (*exit_master)(spe_cycle_t*);
+} spe_module_t;
 
-extern speModule_t *speModules[];
-extern int speModuleNum;
+extern spe_module_t *spe_modules[];
 
 extern bool
-speModuleInit();
+spe_module_init();
 
 #endif

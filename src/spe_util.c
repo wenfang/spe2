@@ -1,16 +1,13 @@
 #include "spe_util.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <fcntl.h>
 
 /*
 ===================================================================================================
-SpeDaemon
+spe_daemon
 ===================================================================================================
 */
 int 
-SpeDaemon() {
+spe_daemon() {
   switch (fork()) {
   case -1:
     return -1;
@@ -34,11 +31,11 @@ SpeDaemon() {
 
 /*
 ===================================================================================================
-SpeSavePid
+spe_save_pid
 ===================================================================================================
 */
 bool
-SpeSavePid(const char* pid_file) {
+spe_save_pid(const char* pid_file) {
   ASSERT(pid_file);
   FILE *fp;
   if (!(fp = fopen(pid_file, "w"))) return false;
@@ -49,11 +46,11 @@ SpeSavePid(const char* pid_file) {
 
 /*
 ===================================================================================================
-SpeGetPid
+spe_get_pid
 ===================================================================================================
 */
 pid_t
-SpeGetPid(const char* pid_file) {
+spe_get_pid(const char* pid_file) {
   ASSERT(pid_file);
   long pid;
   FILE *fp;
@@ -65,11 +62,11 @@ SpeGetPid(const char* pid_file) {
 
 /*
 ===================================================================================================
-SpeRemovePid
+spe_remove_pid
 ===================================================================================================
 */
 bool
-SpeRemovePid(const char* pid_file) {
+spe_remove_pid(const char* pid_file) {
   ASSERT(pid_file);
   if (unlink(pid_file)) return false;
   return true;
@@ -77,30 +74,17 @@ SpeRemovePid(const char* pid_file) {
 
 extern char** environ;
 
-static char** speArgv;
-static char* speArgvLast = NULL;
+static char** spe_argv;
+static char* spe_argv_last = NULL;
 
 /*
 ===================================================================================================
-SpeInitProctitle
+spe_init_proc_title
 ===================================================================================================
 */
 bool
-SpeInitProctitle(int argc, char** argv) {
-	/*
-	speArgv = calloc(1, (argc+1)*sizeof(char*));
-	if (speArgv == NULL) return false;
-
-	size_t len = 0;
-	for (int i=0; i<argc; i++) {
-		len = strlen(argv[i]) + 1;
-		speArgv[i] = calloc(1, len);
-		if (speArgv[i] == NULL) return false;
-		strncpy(speArgv[i], argv[i], len);
-	}
-	speArgv[argc] = NULL;
-	*/
-	speArgv = argv;
+spe_init_proc_title(int argc, char** argv) {
+	spe_argv = argv;
 
 	size_t size = 0;
 	for (int i=0; environ[i]; i++) {
@@ -110,33 +94,33 @@ SpeInitProctitle(int argc, char** argv) {
 	char* p = calloc(1, size);
 	if (p == NULL) return false;
 
-	speArgvLast =  speArgv[0];
-	for (int i=0; speArgv[i]; i++) {
-		if (speArgvLast == speArgv[i]) speArgvLast = speArgv[i] + strlen(speArgv[i]) + 1;
+	spe_argv_last = spe_argv[0];
+	for (int i=0; spe_argv[i]; i++) {
+		if (spe_argv_last == spe_argv[i]) spe_argv_last = spe_argv[i] + strlen(spe_argv[i]) + 1;
 	}
 
 	for (int i=0; environ[i]; i++) {
-		if (speArgvLast == environ[i]) {
+		if (spe_argv_last == environ[i]) {
 			size = strlen(environ[i]) + 1;
-			speArgvLast = environ[i] + size;
+			spe_argv_last = environ[i] + size;
 			strncpy(p, environ[i], size);
 			environ[i] = p;
 			p += size;
 		}
 	}
 
-	speArgvLast--;
+	spe_argv_last--;
 
 	return true;
 }
 
 /*
 ===================================================================================================
-SpeSetProcTitle
+spe_set_proc_title
 ===================================================================================================
 */
 void
-SpeSetProctitle(char* title) {
-	speArgv[1] = NULL;
-	strncpy(speArgv[0], title, speArgvLast - speArgv[0]);
+spe_set_proc_title(char* title) {
+	spe_argv[1] = NULL;
+	strncpy(spe_argv[0], title, spe_argv_last - spe_argv[0]);
 }

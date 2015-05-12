@@ -1,33 +1,30 @@
 #include "spe_module.h"
-#include "spe_epoll.h"
+//#include "spe_epoll.h"
 #include "spe_task.h"
-#include "spe_signal.h"
-#include "spe_server.h"
-#include "spe_lua.h"
-#include "spe_test.h"
+//#include "spe_signal.h"
+//#include "spe_server.h"
+//#include "spe_lua.h"
+//#include "spe_test.h"
 
-speModule_t *speModules[] = {
-  &speEpollModule,
-  &speConnModule,
-  &speTaskModule,
-  &speSignalModule,
-  &speServerModule,
-  &speLuaModule,
-  &speTestModule,
+spe_module_t *spe_modules[] = {
+ // &speEpollModule,
+ // &speConnModule,
+  &spe_task_module,
+ // &speSignalModule,
+ // &speServerModule,
+ // &speLuaModule,
+ // &speTestModule,
   NULL,
 };
 
-int speModuleNum;
-
 bool
-speModuleInit() {
+spe_module_init() {
   int i;
-  for (i = 0; speModules[i] != NULL; i++) {
+  for (i = 0; spe_modules[i] != NULL; i++) {
     if (i > SPE_MODULE_MAX) {
       return false;
     }
-    speModules[i]->index = i;
+    spe_modules[i]->index = i;
   }
-  speModuleNum = i;
   return true;
 }

@@ -10,9 +10,10 @@
 #include <errno.h>
 
 typedef struct {
-  speTask_t*  readTask;
-  speTask_t*  writeTask;
-  unsigned    mask:2;             // mask set in epoll
+  int       fd;
+  unsigned  mask:2;             // mask set in epoll
+  speTask_t readTask;
+  speTask_t writeTask;
 } speEpoll_t __attribute__((aligned(sizeof(long))));
 
 static int        				epfd;

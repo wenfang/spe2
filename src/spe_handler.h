@@ -5,18 +5,17 @@ typedef void (*SpeHandler0)(void);
 typedef void (*SpeHandler1)(void*);
 typedef void (*SpeHandler2)(void*, void*);
 
-struct speHandler_s {
+typedef struct spe_handler_s {
   void* handler;
   void* arg1;
   void* arg2;
   int   argc;
-} __attribute__((aligned(sizeof(long))));
-typedef struct speHandler_s speHandler_t;
+} __attribute__((aligned(sizeof(long)))) spe_handler_t;
 
-#define SPE_HANDLER_NULL                        (speHandler_t){NULL, NULL, NULL, 0}
-#define SPE_HANDLER0(handler)                   (speHandler_t){handler, NULL, NULL, 0}
-#define SPE_HANDLER1(handler, arg1)             (speHandler_t){handler, arg1, NULL, 1}
-#define SPE_HANDLER2(handler, arg1, arg2)       (speHandler_t){handler, arg1, arg2, 2}
+#define SPE_HANDLER_NULL                        (spe_handler_t){NULL, NULL, NULL, 0}
+#define SPE_HANDLER0(handler)                   (spe_handler_t){handler, NULL, NULL, 0}
+#define SPE_HANDLER1(handler, arg1)             (spe_handler_t){handler, arg1, NULL, 1}
+#define SPE_HANDLER2(handler, arg1, arg2)       (spe_handler_t){handler, arg1, arg2, 2}
 
 #define SPE_HANDLER_CALL(h)                                         \
   do {                                                              \

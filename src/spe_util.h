@@ -28,19 +28,19 @@
 
 
 static inline unsigned long 
-SpeCurrentTime() {
+spe_current_time() {
   struct timeval tv;
   gettimeofday(&tv, NULL);
   return (tv.tv_sec * 1000 + tv.tv_usec / 1000);
 }
 
 static inline unsigned
-SpeCpuCount() {
+spe_cpu_count() {
   return sysconf(_SC_NPROCESSORS_ONLN);
 }
 
 static inline bool
-SpeSetMaxOpenFiles(unsigned file_num) {
+spe_max_open_files(unsigned file_num) {
   struct rlimit r;
   r.rlim_cur = file_num;
   r.rlim_max = file_num;
@@ -51,21 +51,21 @@ SpeSetMaxOpenFiles(unsigned file_num) {
 }
 
 extern int
-SpeDaemon();
+spe_daemon();
 
 extern bool
-SpeSavePid(const char* pid_file);
+spe_save_pid(const char* pid_file);
 
 extern pid_t
-SpeGetPid(const char* pid_file);
+spe_get_pid(const char* pid_file);
 
 extern bool
-SpeRemovePid(const char* pid_file);
+spe_remove_pid(const char* pid_file);
 
 extern bool
-SpeInitProctitle(int argc, char** argv);
+spe_init_proc_title(int argc, char** argv);
 
 extern void
-SpeSetProctitle(char* title);
+spe_set_proc_title(char* title);
 
 #endif

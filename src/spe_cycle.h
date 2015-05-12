@@ -5,16 +5,17 @@
 
 #define SPE_MODULE_MAX  128
 
-typedef struct {
+typedef struct spe_cycle_s {
   int         daemon;
   int         procs;
   int         maxfd;
   const char  *pidfile;
   void        *ctx[SPE_MODULE_MAX];
-} speCycle_t;
+} spe_cycle_t;
 
-bool SpeCycleInit();
+extern
+bool spe_cycle_init();
 
-extern speCycle_t cycle;
+extern spe_cycle_t cycle;
 
 #endif

@@ -6,110 +6,110 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define SPE_BUF_ERROR -2
+#define SPE_BUF_ERROR   -2
+#define SPE_BUF_EAGAIN  -3
 
-typedef struct {
-  char*     Data;
-  char*     start;
-  unsigned  Len;      
-  unsigned  size;     
-} speBuf_t __attribute__((aligned(sizeof(long))));
+typedef struct spe_buf_s {
+  char*     data;
+  char*     _start;
+  unsigned  len;      
+  unsigned  _size;     
+} spe_buf_t __attribute__((aligned(sizeof(long))));
 
-typedef struct {
-  speBuf_t**  Data; 
-  unsigned    Len;    
-  unsigned    size;
-} speBufs_t __attribute__((aligned(sizeof(long))));
+typedef struct spe_bufs_s {
+  spe_buf_t** data; 
+  unsigned    len;    
+  unsigned    _size;
+} spe_bufs_t __attribute__((aligned(sizeof(long))));
 
 extern bool 
-SpeBufAppend(speBuf_t* buf, const char* src, unsigned len);
+spe_buf_append(spe_buf_t* buf, const char* src, unsigned len);
 
 extern bool
-SpeBufCopy(speBuf_t* buf, const char* src, unsigned len);
-
-extern int
-SpeBufLConsume(speBuf_t* buf, unsigned len);
-
-extern int
-SpeBufRConsume(speBuf_t* buf, unsigned len);
-
-extern int
-SpeBufSearch(speBuf_t* buf, const char* key);
+spe_buf_copy(spe_buf_t* buf, const char* src, unsigned len);
 
 extern void
-SpeBufLStrim(speBuf_t* buf);
+spe_buf_lconsume(spe_buf_t* buf, unsigned len);
 
 extern void
-SpeBufRStrim(speBuf_t* buf);
+spe_buf_rconsume(spe_buf_t* buf, unsigned len);
 
 extern int
-SpeBufCmp(speBuf_t* buf1, speBuf_t* buf2);
+spe_buf_search(spe_buf_t* buf, const char* key);
 
 extern void
-SpeBufToLower(speBuf_t* buf);
-
-extern int
-SpeBufRead(int fd, speBuf_t* buf, unsigned len);
-
-extern int
-SpeBufReadAppend(int fd, speBuf_t* buf, unsigned len);
+spe_buf_lstrim(spe_buf_t* buf, char* token);
 
 extern void
-SpeBufToUpper(speBuf_t* buf);
+spe_buf_rstrim(spe_buf_t* buf, char* token);
+
+extern int
+spe_buf_cmp(spe_buf_t* buf1, spe_buf_t* buf2);
+
+extern void
+spe_buf_to_lower(spe_buf_t* buf);
+
+extern void
+spe_buf_to_upper(spe_buf_t* buf);
+
+extern int
+spe_buf_read_fd_append(int fd, unsigned len, spe_buf_t* buf);
+
+extern int
+spe_buf_read_fd_copy(int fd, unsigned len, spe_buf_t* buf);
 
 static inline void 
-SpeBufClean(speBuf_t* buf) {
+spe_buf_clean(spe_buf_t* buf) {
   ASSERT(buf);
-  if (!buf->start) return;
-  buf->Data     = buf->start;
-  buf->Len      = 0;
-  buf->Data[0]  = 0;
+  buf->data = buf->_start;
+  buf->len  = 0;
+  if (buf->_size) buf->data[0] = 0;
 }
 
 static inline void 
-SpeBufStrim(speBuf_t* buf) {
-  ASSERT(buf);
-  SpeBufLStrim(buf);
-  SpeBufRStrim(buf);
+spe_buf_strim(spe_buf_t* buf, char* token) {
+  ASSERT(buf && token);
+  spe_buf_lstrim(buf, token);
+  spe_buf_rstrim(buf, token);
 }
 
-static inline speBuf_t*
-SpeBufCreate() {
-  return calloc(1, sizeof(speBuf_t));
+static inline spe_buf_t*
+spe_buf_create() {
+  return calloc(1, sizeof(spe_buf_t));
 }
 
 static inline void
-SpeBufDestroy(speBuf_t* buf) {
-  if (!buf) return;
-  free(buf->start);
+spe_buf_destroy(spe_buf_t* buf) {
+  if (buf == NULL) return;
+  free(buf->_start);
   free(buf);
 }
 
-static inline speBufs_t*
-SpeBufsCreate() {
-  return calloc(1, sizeof(speBufs_t));
+static inline spe_bufs_t*
+spe_bufs_create() {
+  return calloc(1, sizeof(spe_bufs_t));
 }
 
 static inline void
-SpeBufsDestroy(speBufs_t* bufs) {
+spe_bufs_destroy(spe_bufs_t* bufs) {
   if (!bufs) return;
-  for (int i = 0; i < bufs->size; i++) {
-    if (bufs->Data[i]) SpeBufDestroy(bufs->Data[i]);
+  for (int i = 0; i < bufs->_size; i++) {
+    if (bufs->data[i]) spe_buf_destroy(bufs->data[i]);
   }
-  free(bufs->Data);
+  free(bufs->data);
   free(bufs);
 }
 
 static inline void 
-SpeBufsClean(speBufs_t* bufs) {
+spe_bufs_clean(spe_bufs_t* bufs) {
   ASSERT(bufs);
-  bufs->Len = 0;
+  bufs->len = 0;
 }
 
-extern speBufs_t* 
-SpeBufSplit(speBuf_t* buf, const char* token);
+extern spe_bufs_t* 
+spe_buf_split(spe_buf_t* buf, const char* token);
 
 extern bool 
-SpeBufsAppend(speBufs_t* bufs, char* src, unsigned len);
+spe_bufs_append(spe_bufs_t* bufs, char* src, unsigned len);
 
 #endif

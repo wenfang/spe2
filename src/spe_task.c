@@ -1,6 +1,4 @@
-#include "spe_module.h"
 #include "spe_task.h"
-#include "spe_epoll.h"
 #include "spe_util.h"
 #include "spe_log.h"
 #include <stdlib.h>
@@ -9,8 +7,6 @@
 #define SPE_TASK_FREE   0   // task is alloc not in queue
 #define SPE_TASK_TIMER  1   // task in timer queue
 #define SPE_TASK_QUEUE  2   // task in running queue
-
-int speTaskNum;             // task num in running queue
 
 static LIST_HEAD(task_head);
 static struct rb_root   timer_head;
@@ -21,15 +17,25 @@ spe_task_init
 ===================================================================================================
 */
 void
-spe_task_init(speTask_t* task, unsigned flag) {
+spe_task_init(spe_task_t* task) {
   ASSERT(task);
-  task->Handler = SPE_HANDLER_NULL;
+  task->handler = SPE_HANDLER_NULL;
   task->expire  = 0;
-  rb_init_node(&task->timerNode);
-  INIT_LIST_HEAD(&task->taskNode);
-  task->flag    = flag;
+  rb_init_node(&task->timer_node);
+  INIT_LIST_HEAD(&task->task_node);
+  task->fast    = 0;
   task->status  = SPE_TASK_FREE;
-  task->Timeout = 0;
+  task->timeout = 0;
+}
+
+/*
+===================================================================================================
+spe_task_empty
+===================================================================================================
+*/
+bool
+spe_task_empty() {
+  return list_empty(&task_head) ? true : false;
 }
 
 /*
@@ -37,22 +43,21 @@ spe_task_init(speTask_t* task, unsigned flag) {
 spe_task_schedule
 ===================================================================================================
 */
-bool
-spe_task_schedule(speTask_t* task) {
+void
+spe_task_schedule(spe_task_t* task) {
   ASSERT(task);
-  if (task->status == SPE_TASK_QUEUE) return false;
+  if (task->status == SPE_TASK_QUEUE) return;
   if (task->status == SPE_TASK_TIMER) {
-    rb_erase(&task->timerNode, &timer_head);
-    rb_init_node(&task->timerNode);
+    rb_erase(&task->timer_node, &timer_head);
+    rb_init_node(&task->timer_node);
   }
-  if (unlikely(task->flag == SPE_TASK_FAST)) {
-    SPE_HANDLER_CALL(task->Handler);
-    return true;
+  if (unlikely(task->fast)) {
+    task->status = SPE_TASK_FREE;
+    SPE_HANDLER_CALL(task->handler);
+    return;
   }
-  list_add_tail(&task->taskNode, &task_head);
+  list_add_tail(&task->task_node, &task_head);
   task->status = SPE_TASK_QUEUE;
-  speTaskNum++;
-  return true;
 }
 
 /*
@@ -60,19 +65,19 @@ spe_task_schedule(speTask_t* task) {
 spe_task_schedule_timeout
 ===================================================================================================
 */
-bool
-spe_task_schedule_timeout(speTask_t* task, unsigned long ms) {
+void
+spe_task_schedule_timeout(spe_task_t* task, unsigned long ms) {
   ASSERT(task);
-  if (task->status == SPE_TASK_QUEUE) return false;
+  if (task->status == SPE_TASK_QUEUE) return;
   if (task->status == SPE_TASK_TIMER) {
-    rb_erase(&task->timerNode, &timer_head);
-    rb_init_node(&task->timerNode);
+    rb_erase(&task->timer_node, &timer_head);
+    rb_init_node(&task->timer_node);
   }
-  task->expire  = SpeCurrentTime() + ms;
-  task->Timeout = 0;
+  task->expire  = spe_current_time() + ms;
+  task->timeout = 0;
   struct rb_node **new = &timer_head.rb_node, *parent = NULL;
   while (*new) {
-    speTask_t* curr = rb_entry(*new, speTask_t, timerNode);
+    spe_task_t* curr = rb_entry(*new, spe_task_t, timer_node);
     parent = *new;
     if (task->expire < curr->expire) {
       new = &((*new)->rb_left);
@@ -80,10 +85,9 @@ spe_task_schedule_timeout(speTask_t* task, unsigned long ms) {
       new = &((*new)->rb_right);
     }
   }
-  rb_link_node(&task->timerNode, parent, new);
-  rb_insert_color(&task->timerNode, &timer_head);
+  rb_link_node(&task->timer_node, parent, new);
+  rb_insert_color(&task->timer_node, &timer_head);
   task->status = SPE_TASK_TIMER;
-  return true;
 }
 
 /*
@@ -91,22 +95,17 @@ spe_task_schedule_timeout(speTask_t* task, unsigned long ms) {
 spe_task_dequeue
 ===================================================================================================
 */
-bool
-spe_task_dequeue(speTask_t* task) {
+void
+spe_task_dequeue(spe_task_t* task) {
   ASSERT(task);
+  if (task->status == SPE_TASK_FREE) return;
   if (task->status == SPE_TASK_QUEUE) {
-    list_del_init(&task->taskNode);
-    task->status = SPE_TASK_FREE;
-    speTaskNum--;
-    return true;
-  } 
-  if (task->status == SPE_TASK_TIMER) {
-    rb_erase(&task->timerNode, &timer_head);
-    rb_init_node(&task->timerNode);
-    task->status = SPE_TASK_FREE;
-    return true; 
+    list_del_init(&task->task_node);
+  } else if (task->status == SPE_TASK_TIMER) {
+    rb_erase(&task->timer_node, &timer_head);
+    rb_init_node(&task->timer_node);
   }
-  return false;
+  task->status = SPE_TASK_FREE;
 }
 
 /*
@@ -118,44 +117,41 @@ void
 spe_task_process(void) {
   // check timer queue
   if (!RB_EMPTY_ROOT(&timer_head)) {
-    unsigned long curr_time = SpeCurrentTime();
+    unsigned long curr_time = spe_current_time();
     // check timer list
     struct rb_node* first = rb_first(&timer_head);
     while (first) {
-      speTask_t* task = rb_entry(first, speTask_t, timerNode);
+      spe_task_t* task = rb_entry(first, spe_task_t, timer_node);
       if (task->expire > curr_time) break;
       ASSERT(task->status == SPE_TASK_TIMER);
-      rb_erase(&task->timerNode, &timer_head);
-      rb_init_node(&task->timerNode);
-      task->Timeout = 1;
+      rb_erase(&task->timer_node, &timer_head);
+      rb_init_node(&task->timer_node);
+      task->timeout = 1;
       // add to task queue
-      list_add_tail(&task->taskNode, &task_head);
+      list_add_tail(&task->task_node, &task_head);
       task->status = SPE_TASK_QUEUE;
-      speTaskNum++;
       first = rb_first(&timer_head);
     } 
   }
   // run task
-  while (speTaskNum) {
-    speTask_t* task = list_first_entry(&task_head, speTask_t, taskNode);
+  while (!list_empty(&task_head)) {
+    spe_task_t* task = list_first_entry(&task_head, spe_task_t, task_node);
     if (!task) break;
     ASSERT(task->status == SPE_TASK_QUEUE);
-    list_del_init(&task->taskNode);
-    speTaskNum--;
-    ASSERT(speTaskNum >= 0);
+    list_del_init(&task->task_node);
     task->status = SPE_TASK_FREE;
-    SPE_HANDLER_CALL(task->Handler);
+    SPE_HANDLER_CALL(task->handler);
   }
 }
 
 static bool
-task_module_init(speCycle_t *cycle) {
+task_module_init(spe_cycle_t *cycle) {
   timer_head = RB_ROOT;
   return true;
 }
 
-speModule_t speTaskModule = {
-  "speTask",
+spe_module_t spe_task_module = {
+  "spe_task",
   0,
   SPE_CORE_MODULE,
   NULL,

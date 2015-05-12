@@ -5,38 +5,50 @@
 #include "spe_list.h"
 #include "spe_rbtree.h"
 #include "spe_handler.h"
+#include "spe_util.h"
 #include <stdbool.h>
 
-#define SPE_TASK_NORM 0
-#define SPE_TASK_FAST 1
-
 typedef struct spe_task_s {
-  speHandler_t      Handler;
-  struct rb_node    timerNode;
-  struct list_head  taskNode;
+  spe_handler_t     handler;
+  struct rb_node    timer_node;
+  struct list_head  task_node;
   unsigned          expire;
   unsigned          status:6;
-  unsigned          flag:1;
-  unsigned          Timeout:1;
-} speTask_t __attribute__((aligned(sizeof(long))));
+  unsigned          fast:1;
+  unsigned          timeout:1;
+} spe_task_t __attribute__((aligned(sizeof(long))));
 
 extern void
-spe_task_init(speTask_t* task, unsigned flag);
+spe_task_init(spe_task_t* task);
 
-extern bool 
-spe_task_schedule(speTask_t* task);
+static inline void
+spe_task_set_handler(spe_task_t* task, spe_handler_t handler, unsigned fast) {
+  ASSERT(task);
+  task->handler = handler;
+  task->fast    = fast;
+}
 
 extern bool
-spe_task_schedule_timeout(speTask_t* task, unsigned long ms);
+spe_task_empty();
 
-extern bool
-spe_task_dequeue(speTask_t* task);
+static inline bool
+spe_task_timeout(spe_task_t* task) {
+  ASSERT(task);
+  return task->timeout ? true : false;
+}
+
+extern void
+spe_task_schedule(spe_task_t* task);
+
+extern void
+spe_task_schedule_timeout(spe_task_t* task, unsigned long ms);
+
+extern void
+spe_task_dequeue(spe_task_t* task);
 
 extern void
 spe_task_process(void);
 
-extern int speTaskNum;
-
-extern speModule_t speTaskModule;
+extern spe_module_t spe_task_module;
 
 #endif
