@@ -15,7 +15,7 @@
 static LIST_HEAD(serverHead);
 
 static void
-serverAccept(speServer_t* server) {
+serverAccept(spe_server_t* server) {
   int cfd = SpeSockAccept(server->sfd);
   if (cfd <= 0) return;
   if (!server->handler) {
@@ -40,12 +40,12 @@ SpeServerPreLoop
 */
 void
 SpeServerPreLoop() {
-  speServer_t *server = NULL;
+  spe_server_t *server = NULL;
   list_for_each_entry(server, &serverHead, serverNode) {
     if (!pthread_mutex_trylock(server->acceptMutex)) {
       if (server->acceptMutexHold) continue;
       server->acceptMutexHold = 1;
-      SpeEpollEnable(server->sfd, SPE_EPOLL_LISTEN, &server->listenTask);
+      SpeEpollEnable(server->sfd, SPE_EPOLL_LISTEN, &server->listen_task);
       continue;
     }
     if (server->acceptMutexHold) {
@@ -62,7 +62,7 @@ SpeServerPostLoop
 */
 void
 SpeServerPostLoop() {
-  speServer_t *server = NULL;
+  spe_server_t *server = NULL;
   list_for_each_entry(server, &serverHead, serverNode) {
     if (server->acceptMutexHold) pthread_mutex_unlock(server->acceptMutex);
   }
@@ -70,11 +70,11 @@ SpeServerPostLoop() {
 
 /*
 ===================================================================================================
-SpeServerRegister
+spe_server_register
 ===================================================================================================
 */
-speServer_t*
-SpeServerRegister(const char* addr, int port, SpeServerHandler handler, void* arg) {
+spe_server_t*
+spe_server_register(const char* addr, int port, spe_server_handler handler, void* arg) {
   // create server fd
   int sfd = SpeSockTcpServer(addr, port);
   if (sfd < 0) {
@@ -83,17 +83,17 @@ SpeServerRegister(const char* addr, int port, SpeServerHandler handler, void* ar
   }
   SpeSockSetBlock(sfd, 0);
   // create server
-  speServer_t *server = calloc(1, sizeof(speServer_t));
+  spe_server_t *server = calloc(1, sizeof(spe_server_t));
   if (!server) {
-    SPE_LOG_ERR("speServer_t calloc error");
+    SPE_LOG_ERR("spe_server_t calloc error");
     SpeSockClose(sfd);
     return NULL;
   }
   server->sfd     = sfd;
   server->handler = handler;
   server->arg     = arg;
-  spe_task_init(&server->listenTask, SPE_TASK_FAST);
-  server->listenTask.Handler = SPE_HANDLER1(serverAccept, server);
+  spe_task_init(&server->listen_task, SPE_TASK_FAST);
+  server->listen_task.Handler = SPE_HANDLER1(serverAccept, server);
   server->acceptMutex = SpeShmMutexCreate();
   if (!server->acceptMutex) {
     SPE_LOG_ERR("SpeShmuxCreate error");
@@ -108,11 +108,11 @@ SpeServerRegister(const char* addr, int port, SpeServerHandler handler, void* ar
 
 /*
 ===================================================================================================
-SpeServerUnregister
+spe_server_unregister
 ===================================================================================================
 */
 bool
-SpeServerUnregister(speServer_t* server) {
+spe_server_unregister(spe_server_t* server) {
   ASSERT(server);
   if (server->acceptMutexHold) {
     SpeEpollDisable(server->sfd, SPE_EPOLL_LISTEN);
@@ -126,12 +126,12 @@ SpeServerUnregister(speServer_t* server) {
 
 /*
 ===================================================================================================
-serverDeinit
+exit_server
 ===================================================================================================
 */
 static bool
-serverDeinit() {
-  speServer_t *server, *tmp;
+exit_server() {
+  spe_server_t *server, *tmp;
   list_for_each_entry_safe(server, tmp, &serverHead, serverNode) {
     if (server->acceptMutex) SpeShmMutexDestroy(server->acceptMutex);
     SpeSockClose(server->sfd);
@@ -140,12 +140,12 @@ serverDeinit() {
   return true;
 }
 
-speModule_t speServerModule = {
-  "speServer",
+spe_module_t spe_server_module = {
+  "spe_server",
   0,
   SPE_CORE_MODULE,
   NULL,
   NULL,
   NULL,
-  serverDeinit,
+  exit_server,
 };

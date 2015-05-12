@@ -9,7 +9,7 @@
 typedef struct spe_module_s {
   const char* name;
   int         index;
-  int         moduleType;
+  int         module_type;
 
   bool  (*init_master)(spe_cycle_t*);
   bool  (*init_worker)(spe_cycle_t*);
@@ -17,6 +17,7 @@ typedef struct spe_module_s {
   bool  (*exit_master)(spe_cycle_t*);
 } spe_module_t;
 
+extern int spe_module_num;
 extern spe_module_t *spe_modules[];
 
 extern bool

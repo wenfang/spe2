@@ -74,7 +74,7 @@ spe_buf_strim(spe_buf_t* buf, char* token) {
 }
 
 static inline spe_buf_t*
-spe_buf_create() {
+spe_buf_create(void) {
   return calloc(1, sizeof(spe_buf_t));
 }
 
@@ -85,8 +85,11 @@ spe_buf_destroy(spe_buf_t* buf) {
   free(buf);
 }
 
+extern spe_bufs_t* 
+spe_buf_split(spe_buf_t* buf, const char* token);
+
 static inline spe_bufs_t*
-spe_bufs_create() {
+spe_bufs_create(void) {
   return calloc(1, sizeof(spe_bufs_t));
 }
 
@@ -105,9 +108,6 @@ spe_bufs_clean(spe_bufs_t* bufs) {
   ASSERT(bufs);
   bufs->len = 0;
 }
-
-extern spe_bufs_t* 
-spe_buf_split(spe_buf_t* buf, const char* token);
 
 extern bool 
 spe_bufs_append(spe_bufs_t* bufs, char* src, unsigned len);

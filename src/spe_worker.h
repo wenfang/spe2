@@ -5,15 +5,15 @@
 #include <sys/types.h>
 
 extern int
-SpeWorkerFork();
+spe_worker_fork(void);
 
 extern int
-SpeWorkerReset(pid_t pid);
+spe_worker_reset(pid_t pid);
 
 extern void
-SpeWorkerStop();
+spe_worker_stop(void);
 
 extern void 
-SpeWorkerProcess();
+spe_worker_process(void);
 
 #endif

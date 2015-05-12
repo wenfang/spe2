@@ -3,14 +3,17 @@
 
 #include "spe_buf.h"
 
+#define SPE_IO_CLOSED 0
+#define SPE_IO_ERROR  -1
+
 typedef struct spe_io_s {
-  spe_buf_t*   read_buffer;
-  unsigned    fd;
-  const char* delim;
-  unsigned    rbytes;
-  unsigned    rtype:2;
-  unsigned    closed:1;
-  unsigned    error:1;
+  spe_buf_t*  _read_buffer;
+  unsigned    _fd;
+  const char* _delim;
+  unsigned    _rbytes;
+  unsigned    _rtype:2;
+  unsigned    _closed:1;
+  unsigned    _error:1;
 } spe_io_t;
 
 extern int  

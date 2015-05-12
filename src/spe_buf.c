@@ -214,6 +214,8 @@ spe_buf_read_fd_append(int fd, unsigned len, spe_buf_t* buf) {
   }
   if (buf->data != buf->_start) {
     memmove(buf->_start, buf->data, buf->len);
+    buf->data           = buf->_start;
+    buf->data[buf->len] = 0;
   }
   int res = read(fd, buf->data+buf->len, buf->_size - buf->len - 1);
   if (res <= 0) return res;
@@ -256,25 +258,25 @@ spe_bufs_append
 ===================================================================================================
 */
 bool 
-spe_bufs_append(spe_bufs_t* bufList, char* src, unsigned len) {
-  ASSERT(bufList && src);
-  if (bufList->len == bufList->_size) {
-    unsigned _size = bufList->_size;
-    bufList->_size = 16 + bufList->_size;
-    spe_buf_t** newdata = realloc(bufList->data, bufList->_size*sizeof(spe_buf_t*));
+spe_bufs_append(spe_bufs_t* bufs, char* src, unsigned len) {
+  ASSERT(bufs && src);
+  if (bufs->len == bufs->_size) {
+    unsigned _size = bufs->_size;
+    bufs->_size = 16 + bufs->_size;
+    spe_buf_t** newdata = realloc(bufs->data, bufs->_size*sizeof(spe_buf_t*));
     if (!newdata) {
-      bufList->_size = _size;
+      bufs->_size = _size;
       return false;
     }
-    bufList->data = newdata;
-    for (int i=bufList->len; i<bufList->_size; i++) bufList->data[i] = NULL;
+    bufs->data = newdata;
+    for (int i=bufs->len; i<bufs->_size; i++) bufs->data[i] = NULL;
   }
   // copy string
-  if (!bufList->data[bufList->len]) {
-    bufList->data[bufList->len] = spe_buf_create(0);
-    if (!bufList->data[bufList->len]) return false;
+  if (!bufs->data[bufs->len]) {
+    bufs->data[bufs->len] = spe_buf_create();
+    if (!bufs->data[bufs->len]) return false;
   }
-  spe_buf_copy(bufList->data[bufList->len], src, len);
-  bufList->len++;
+  spe_buf_copy(bufs->data[bufs->len], src, len);
+  bufs->len++;
   return true;
 }

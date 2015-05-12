@@ -11,14 +11,14 @@
 #define SPE_EPOLL_WRITE  2
 
 extern bool
-SpeEpollEnable(unsigned fd, unsigned mask, speTask_t* task);
+spe_epoll_enable(unsigned fd, unsigned mask, spe_task_t* task);
 
 extern bool
-SpeEpollDisable(unsigned fd, unsigned mask);
+spe_epoll_disable(unsigned fd, unsigned mask);
 
 extern void
-SpeEpollProcess(int timeout);
+spe_epoll_process(int timeout);
 
-extern speModule_t speEpollModule;
+extern spe_module_t spe_epoll_module;
 
 #endif

@@ -12,9 +12,9 @@
 #define VAL_MAXLEN  128
 
 typedef struct spe_opt_s {
-	char              sec[SEC_MAXLEN];
- 	char              key[KEY_MAXLEN];
-	char              val[VAL_MAXLEN];      // string value
+	char sec[SEC_MAXLEN];
+ 	char key[KEY_MAXLEN];      // string key
+	char val[VAL_MAXLEN];      // string value
 	struct list_head  node;
 } spe_opt_t;
 
@@ -88,7 +88,7 @@ spe_opt_create(const char* config_file) {
 
   spe_io_t* io = spe_io_create(config_file);
   if (io == NULL) return false;
-  spe_buf_t* line = SpeBufCreate();
+  spe_buf_t* line = spe_buf_create();
   if (line == NULL) return false;
   // set default section
   strcpy(sec, "global");
@@ -96,43 +96,41 @@ spe_opt_create(const char* config_file) {
   while (res > 0) {
     // get one line from file
     res = spe_io_read_until(io, "\n", line);
-    SpeBufStrim(line);
-    if (line->Len == 0 || line->Data[0] == '#') continue;
+    spe_buf_strim(line, " \r\t\n");
+    if (line->len == 0 || line->data[0] == '#') continue;
     // section line, get section
-    if (line->Data[0] == '[' && line->Data[line->Len-1] == ']') {
-      SpeBufLConsume(line, 1);
-      SpeBufRConsume(line, 1);
-      SpeBufStrim(line);
+    if (line->data[0] == '[' && line->data[line->len-1] == ']') {
+      spe_buf_strim(line, " []\t");
       // section can't be null
-      if (line->Len == 0) {
-        SpeBufDestroy(line);
+      if (line->len == 0) {
+        spe_buf_destroy(line);
         spe_io_destroy(io);
         return false;
       }
-      strncpy(sec, line->Data, SEC_MAXLEN);
+      strncpy(sec, line->data, SEC_MAXLEN);
       sec[SEC_MAXLEN-1] = 0;
       continue;
     }
     // split key and value
-    speBufs_t* bufList = SpeBufSplit(line, "=");
-    if (bufList->Len != 2) {
-      SpeBufsDestroy(bufList);
-      SpeBufDestroy(line);
+    spe_bufs_t* bufs = spe_buf_split(line, "=");
+    if (bufs->len != 2) {
+      spe_bufs_destroy(bufs);
+      spe_buf_destroy(line);
       spe_io_destroy(io);
       return false;
     }
-    SpeBufStrim(bufList->Data[0]);
-    strncpy(key, bufList->Data[0]->Data, KEY_MAXLEN);
+    spe_buf_strim(bufs->data[0], " ");
+    strncpy(key, bufs->data[0]->data, KEY_MAXLEN);
     key[KEY_MAXLEN-1] = 0;
 
-    SpeBufStrim(bufList->Data[1]);
-    strncpy(val, bufList->Data[1]->Data, VAL_MAXLEN);
+    spe_buf_strim(bufs->data[1], " ");
+    strncpy(val, bufs->data[1]->data, VAL_MAXLEN);
     val[VAL_MAXLEN-1] = 0;
-    SpeBufsDestroy(bufList);
+    spe_bufs_destroy(bufs);
     // set option value
     spe_opt_set(sec, key, val);
   }
-  SpeBufDestroy(line);
+  spe_buf_destroy(line);
   spe_io_destroy(io);
   return true;
 }

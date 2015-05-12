@@ -3,14 +3,14 @@
 
 #include "spe_module.h"
 
-typedef void SpeSignal_Handler(int sig);
+typedef void spe_signal_handler(int sig);
 
 extern void 
-SpeSignalRegister(int sig, SpeSignal_Handler handler);
+spe_signal_register(int sig, spe_signal_handler handler);
 
 extern void 
-SpeSignalProcess();
+spe_signal_process(void);
 
-extern speModule_t speSignalModule;
+extern spe_module_t spe_signal_module;
 
 #endif

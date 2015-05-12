@@ -2,17 +2,17 @@
 #include <stdio.h>
 
 int main() {
-  speIO_t* io = SpeIOCreate("/test.data");
-  speBuf_t* buf = SpeBufCreate();
+  spe_io_t* io = spe_io_create("test/iotest.data");
+  spe_buf_t* buf = spe_buf_create();
 
   for (;;) {
-    SpeIOReaduntil(io, "\n");
-    if (io->Error || io->Closed) break;
-    SpeBufCopy(buf, io->ReadBuffer->Data, io->RLen - strlen("\n"));
-    SpeBufLConsume(io->ReadBuffer, io->RLen);
-    printf("%s\n", buf->Data);
+    int rc = spe_io_read_until(io, "t", buf);
+    printf("rc: %d\n", rc);
+    if (buf->len) printf("%s\n", buf->data);
+    spe_buf_clean(buf);
+    if (rc <= 0) break;
   }
   
-  SpeIODestroy(io);
+  spe_io_destroy(io);
   return 1;
 }

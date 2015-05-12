@@ -17,21 +17,21 @@ static void stopWorker(int sig) {
 
 static void
 SpeMasterProcess() {
-  SpeSavePid(cycle.pidfile);
-	SpeSetProctitle("spe: master");
+  spe_save_pid(cycle.pidfile);
+	spe_set_proc_title("spe: master");
 
-  SpeSignalRegister(SIGPIPE, SIG_IGN);
-  SpeSignalRegister(SIGHUP, SIG_IGN);
-  SpeSignalRegister(SIGCHLD, reapWorker);
-  SpeSignalRegister(SIGTERM, stopWorker);
-  SpeSignalRegister(SIGINT, stopWorker);
-  SpeSignalRegister(SIGUSR1, stopWorker);
+  spe_signal_register(SIGPIPE, SIG_IGN);
+  spe_signal_register(SIGHUP, SIG_IGN);
+  spe_signal_register(SIGCHLD, reapWorker);
+  spe_signal_register(SIGTERM, stopWorker);
+  spe_signal_register(SIGINT, stopWorker);
+  spe_signal_register(SIGUSR1, stopWorker);
 
   sigset_t set;
   sigemptyset(&set);
   for (;;) {
     sigsuspend(&set);
-    SpeSignalProcess();
+    spe_signal_process();
     if (speReapWorker) {
       for (;;) {
         int status;
@@ -62,7 +62,7 @@ SpeMasterProcess() {
       break;
     }
   }
-  SpeRemovePid(cycle.pidfile);
+  spe_remove_pid(cycle.pidfile);
 }
 
 int main(int argc, char* argv[]) {
@@ -70,44 +70,44 @@ int main(int argc, char* argv[]) {
     fprintf(stdout, "Usage: %s [configFile]\n", argv[0]);
     return 1;
   }
-  if (argc == 2 && !SpeOptCreate(argv[1])) {
+  if (argc == 2 && !spe_opt_create(argv[1])) {
     fprintf(stderr, "[ERROR] Config File Parse Error\n");
     return 1;
   }
-	SpeInitProctitle(argc, argv);
+	spe_init_proc_title(argc, argv);
   // init modules index, get speModuleNum
-  if (!speModuleInit()) {
-    fprintf(stderr, "[ERROR] speModuleInit Error\n");
+  if (!spe_module_init()) {
+    fprintf(stderr, "[ERROR] spe_module_init\n");
     return 1;
   }
   // init cycle
-  if (!SpeCycleInit()) {
-    fprintf(stderr, "[ERROR] SpeCycleInit Error\n");
+  if (!spe_cycle_init()) {
+    fprintf(stderr, "[ERROR] spe_cycle_init\n");
     return 1;
   }
   // set maxfd
-  if (!SpeSetMaxOpenFiles(cycle.maxfd)) {
-    fprintf(stderr, "[ERROR] SetMaxOpenFiles %s\n", strerror(errno));
+  if (!spe_max_open_files(cycle.maxfd)) {
+    fprintf(stderr, "[ERROR] spe_max_open_files %s\n", strerror(errno));
     return 1;
   }
   // daemonize
-  if (cycle.daemon && SpeDaemon()) {
-    fprintf(stderr, "[ERROR] SpeDaemon Error\n");
+  if (cycle.daemon && spe_daemon()) {
+    fprintf(stderr, "[ERROR] spe_daemon\n");
     return 1;
   }
   // init core module
-  for (int i = 0; i < speModuleNum; i++) {
-    if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
-    if (speModules[i]->initMaster && !speModules[i]->initMaster(&cycle)) {
-      SPE_LOG_ERR("core module initMaster Error");
+  for (int i = 0; i < spe_module_num; i++) {
+    if (spe_modules[i]->module_type != SPE_CORE_MODULE) continue;
+    if (spe_modules[i]->init_master && !spe_modules[i]->init_master(&cycle)) {
+      SPE_LOG_ERR("core module init_master Error");
       return 1;
     }
   }
   // init user module
-  for (int i = 0; i < speModuleNum; i++) {
-    if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
-    if (speModules[i]->initMaster && !speModules[i]->initMaster(&cycle)) {
-      SPE_LOG_ERR("user module initMaster Error");
+  for (int i = 0; i < spe_module_num; i++) {
+    if (spe_modules[i]->module_type != SPE_USER_MODULE) continue;
+    if (spe_modules[i]->init_master && !spe_modules[i]->init_master(&cycle)) {
+      SPE_LOG_ERR("user module init_master Error");
       return 1;
     }
   }
@@ -125,20 +125,20 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "[ERROR] SpeProcessFork Error\n");
   }
   // exit user module
-  for (int i = speModuleNum - 1; i >= 0; i--) {
-    if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
-    if (speModules[i]->exitMaster && !speModules[i]->exitMaster(&cycle)) {
-      SPE_LOG_ERR("user module exitMaster Error");
+  for (int i = spe_module_num - 1; i >= 0; i--) {
+    if (spe_modules[i]->module_type != SPE_USER_MODULE) continue;
+    if (spe_modules[i]->exit_master && !spe_modules[i]->exit_master(&cycle)) {
+      SPE_LOG_ERR("user module exit_master Error");
     }
   }
   // exit core module
-  for (int i = speModuleNum - 1; i >= 0; i--) {
-    if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
-    if (speModules[i]->exitMaster && !speModules[i]->exitMaster(&cycle)) {
-      SPE_LOG_ERR("core module exitMaster Error");
+  for (int i = spe_module_num - 1; i >= 0; i--) {
+    if (spe_modules[i]->module_type != SPE_CORE_MODULE) continue;
+    if (spe_modules[i]->exit_master && !spe_modules[i]->exit_master(&cycle)) {
+      SPE_LOG_ERR("core module exit_master Error");
     }
   }
   // destroy speOpt
-  SpeOptDestroy();
+  spe_opt_destroy();
   return 0;
 }

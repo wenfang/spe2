@@ -2,7 +2,7 @@ LUA_DIR = ../support/lua
 
 #OBJS = spe.o spe_module.o spe_opt.o spe_io.o spe_log.o spe_util.o spe_epoll.o spe_task.o spe_rbtree.o spe_sock.o spe_signal.o spe_server.o spe_shm.o spe_conn.o spe_test.o spe_cycle.o spe_worker.o spe_buf.o cJSON.o spe_map.o spe_rpc.o spe_lua.o
 
-OBJS = spe_module.o spe_log.o spe_util.o spe_task.o spe_rbtree.o spe_buf.o spe_cycle.o spe_opt.o spe_io.o spe.o
+OBJS = spe_module.o spe_log.o spe_util.o spe_task.o spe_rbtree.o spe_buf.o spe_cycle.o spe_opt.o spe_io.o spe_signal.o spe_epoll.o spe_worker.o spe_server.o spe.o
 
 OBJS_BUF = spe_buf.o spe_buf_test.o
 OBJS_IO = spe_buf.o spe_io.o spe_io_test.o

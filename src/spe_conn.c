@@ -409,7 +409,7 @@ connExit(speCycle_t *cycle) {
   return true;
 }
 
-speModule_t speConnModule = {
+spe_module_t speConnModule = {
   "speConn",
   0,
   SPE_CORE_MODULE,

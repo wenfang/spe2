@@ -62,6 +62,6 @@ SpeConnCreate(unsigned fd);
 extern void
 SpeConnDestroy(speConn_t* conn);
 
-extern speModule_t speConnModule;
+exter spe_module_t speConnModule;
 
 #endif

@@ -17,34 +17,34 @@
 // for master
 #define SPE_MAX_WORKER 128
 
-typedef struct {
+typedef struct spe_worker_s {
   pid_t pid;
-  int   notifyFd;
-} worker_t;
+  int   notify_fd;
+} spe_worker_t;
 
-static worker_t workers[SPE_MAX_WORKER];
+static spe_worker_t spe_workers[SPE_MAX_WORKER];
 
 // for worker
-static int controlFd;
-static speTask_t controlTask;
-static bool workerStop;
+static int control_fd;
+static spe_task_t control_task;
+static bool worker_stop;
 
 // for master
-static int getSlot() {
+static int get_slot(void) {
   for (int i=0; i<SPE_MAX_WORKER; i++) {
-    if (workers[i].pid == 0) return i;
+    if (spe_workers[i].pid == 0) return i;
   }
   return -1;
 }
 
 /*
 ===================================================================================================
-SpeWorkerFork
+spe_worker_fork
 ===================================================================================================
 */
-int SpeWorkerFork() {
-  int procSlot;
-  if ((procSlot = getSlot()) == -1) return -1;
+int spe_worker_fork(void) {
+  int proc_slot;
+  if ((proc_slot = get_slot()) == -1) return -1;
 
   int channel[2];
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, channel)) return -1;
@@ -56,30 +56,30 @@ int SpeWorkerFork() {
     // set cpu affinity
     cpu_set_t set;
     CPU_ZERO(&set);
-    CPU_SET(procSlot%SpeCpuCount(), &set);
+    CPU_SET(proc_slot%spe_cpu_count(), &set);
     sched_setaffinity(0, sizeof(cpu_set_t), &set);
-    // set controlFd
-    controlFd = channel[1];
+    // set control_fd
+    control_fd = channel[1];
     close(channel[0]);
     return 0;
   }
   // for master
-  workers[procSlot].pid = pid;
-  workers[procSlot].notifyFd = channel[0];
+  spe_workers[proc_slot].pid        = pid;
+  spe_workers[proc_slot].notify_fd  = channel[0];
   close(channel[1]);
   return 1;
 }
 
 /*
 ===================================================================================================
-SpeWorkerReset
+spe_worker_reset
 ===================================================================================================
 */
-int SpeWorkerReset(pid_t pid) {
+int spe_worker_reset(pid_t pid) {
   for (int i=0; i<SPE_MAX_WORKER; i++) {
-    if (workers[i].pid == pid) {
-      workers[i].pid = 0;
-      close(workers[i].notifyFd);
+    if (spe_workers[i].pid == pid) {
+      spe_workers[i].pid = 0;
+      close(spe_workers[i].notify_fd);
       return 0;
     }
   }
@@ -88,72 +88,73 @@ int SpeWorkerReset(pid_t pid) {
 
 /*
 ===================================================================================================
-SpeWorkerStop
+spe_worker_stop
 ===================================================================================================
 */
-void SpeWorkerStop() {
+void spe_worker_stop(void) {
   int comm = WORKER_STOP;
   for (int i=0; i<SPE_MAX_WORKER; i++) {
-    if (workers[i].pid == 0) continue;
-    write(workers[i].notifyFd, &comm, sizeof(int));
-    workers[i].pid = 0;
-    close(workers[i].notifyFd);
+    if (spe_workers[i].pid == 0) continue;
+    write(spe_workers[i].notify_fd, &comm, sizeof(int));
+    spe_workers[i].pid = 0;
+    close(spe_workers[i].notify_fd);
   }
 }
 
 // for worker
-static void workerCtrlHandler() {
+static void worker_control_handler() {
   int comm;
-  int res = read(controlFd, &comm, sizeof(int));
+  int res = read(control_fd, &comm, sizeof(int));
+  if (res < 0) return;
   if (res == 0) { // master exit, worker exit
-    workerStop = 1;
+    worker_stop = 1;
     return;
   }
   if (comm == WORKER_STOP) {
-    workerStop = 1;
+    worker_stop = 1;
   }
 }
 
 void
-SpeWorkerProcess() {
-	SpeSetProctitle("spe: worker");
-  SpeSignalRegister(SIGPIPE, SIG_IGN);
-  SpeSignalRegister(SIGHUP, SIG_IGN);
-  SpeSignalRegister(SIGCHLD, SIG_IGN);
-  SpeSignalRegister(SIGUSR1, SIG_IGN);
+spe_worker_process(void) {
+	spe_set_proc_title("spe: worker");
+  spe_signal_register(SIGPIPE, SIG_IGN);
+  spe_signal_register(SIGHUP, SIG_IGN);
+  spe_signal_register(SIGCHLD, SIG_IGN);
+  spe_signal_register(SIGUSR1, SIG_IGN);
   // init worker
-  for (int i = 0; i < speModuleNum; i++) {
-    if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
-    if (speModules[i]->initWorker) speModules[i]->initWorker(&cycle);
+  for (int i = 0; i < spe_module_num; i++) {
+    if (spe_modules[i]->module_type != SPE_CORE_MODULE) continue;
+    if (spe_modules[i]->init_worker) spe_modules[i]->init_worker(&cycle);
   }
-  for (int i = 0; i < speModuleNum; i++) {
-    if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
-    if (speModules[i]->initWorker) speModules[i]->initWorker(&cycle);
+  for (int i = 0; i < spe_module_num; i++) {
+    if (spe_modules[i]->module_type != SPE_USER_MODULE) continue;
+    if (spe_modules[i]->init_worker) spe_modules[i]->init_worker(&cycle);
   }
   // enable control task
-  spe_task_init(&controlTask, SPE_TASK_FAST);
-  controlTask.Handler = SPE_HANDLER0(workerCtrlHandler);
-  SpeEpollEnable(controlFd, SPE_EPOLL_READ, &controlTask);
+  spe_task_init(&control_task);
+  spe_task_set_handler(&control_task, SPE_HANDLER0(worker_control_handler), 1);
+  spe_epoll_enable(control_fd, SPE_EPOLL_READ, &control_task);
   // event loop
   unsigned timeout = 300;
-  while (!workerStop) {
-    if (speTaskNum) timeout = 0;
+  while (!worker_stop) {
+    if (spe_task_empty()) timeout = 0;
     SpeServerPreLoop();
-    SpeEpollProcess(timeout);
+    spe_epoll_process(timeout);
     SpeServerPostLoop();
     spe_task_process();
-    SpeSignalProcess();
+    spe_signal_process();
   }
   // disable control task
-  SpeEpollDisable(controlFd, SPE_EPOLL_READ);
-  close(controlFd);
+  spe_epoll_disable(control_fd, SPE_EPOLL_READ);
+  close(control_fd);
   // exit worker
-  for (int i = speModuleNum - 1; i >= 0; i--) {
-    if (speModules[i]->moduleType != SPE_USER_MODULE) continue;
-    if (speModules[i]->exitWorker) speModules[i]->exitWorker(&cycle);
+  for (int i = spe_module_num - 1; i >= 0; i--) {
+    if (spe_modules[i]->module_type != SPE_USER_MODULE) continue;
+    if (spe_modules[i]->exit_worker) spe_modules[i]->exit_worker(&cycle);
   }
-  for (int i = speModuleNum - 1; i >= 0; i--) {
-    if (speModules[i]->moduleType != SPE_CORE_MODULE) continue;
-    if (speModules[i]->exitWorker) speModules[i]->exitWorker(&cycle);
+  for (int i = spe_module_num - 1; i >= 0; i--) {
+    if (spe_modules[i]->module_type != SPE_CORE_MODULE) continue;
+    if (spe_modules[i]->exit_worker) spe_modules[i]->exit_worker(&cycle);
   }
 }
