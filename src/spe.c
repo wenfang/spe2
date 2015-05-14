@@ -5,14 +5,14 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-static int speReapWorker;
-static void reapWorker(int sig) {
-  speReapWorker = 1;
+static int spe_reap_worker;
+static void reap_worker(int sig) {
+  spe_reap_worker = 1;
 }
 
-static int speStopWorker;
-static void stopWorker(int sig) {
-  speStopWorker = 1;
+static int spe_stop_worker;
+static void stop_worker(int sig) {
+  spe_stop_worker = 1;
 }
 
 static void
@@ -22,17 +22,17 @@ SpeMasterProcess() {
 
   spe_signal_register(SIGPIPE, SIG_IGN);
   spe_signal_register(SIGHUP, SIG_IGN);
-  spe_signal_register(SIGCHLD, reapWorker);
-  spe_signal_register(SIGTERM, stopWorker);
-  spe_signal_register(SIGINT, stopWorker);
-  spe_signal_register(SIGUSR1, stopWorker);
+  spe_signal_register(SIGCHLD, reap_worker);
+  spe_signal_register(SIGTERM, stop_worker);
+  spe_signal_register(SIGINT, stop_worker);
+  spe_signal_register(SIGUSR1, stop_worker);
 
   sigset_t set;
   sigemptyset(&set);
   for (;;) {
     sigsuspend(&set);
     spe_signal_process();
-    if (speReapWorker) {
+    if (spe_reap_worker) {
       for (;;) {
         int status;
         int pid = waitpid(-1, &status, WNOHANG);
@@ -41,24 +41,24 @@ SpeMasterProcess() {
           SPE_LOG_ERR("waipid error");
           break;
         }
-        if (SpeWorkerReset(pid) < 0) {
+        if (spe_worker_reset(pid) < 0) {
           SPE_LOG_ERR("SpeProcessExit Error");
           continue;
         }
         // for new worker
-        int res = SpeWorkerFork();
+        int res = spe_worker_fork();
         if (res < 0) {
           SPE_LOG_ERR("SpeProcessFork Error");
         } else if (res == 0) {
-          SpeWorkerProcess();
+          spe_worker_process();
           return;
         }
         SPE_LOG_WARNING("SpeWorker Restart");
       }
-      speReapWorker = 0;
+      spe_reap_worker = 0;
     }
-    if (speStopWorker) {
-      SpeWorkerStop();
+    if (spe_stop_worker) {
+      spe_worker_stop();
       break;
     }
   }
@@ -114,11 +114,11 @@ int main(int argc, char* argv[]) {
   // fork worker
   int res;
   for (int i=0; i<cycle.procs; i++) {
-    res = SpeWorkerFork();
+    res = spe_worker_fork();
     if (res <= 0) break;
   }
   if (res == 0) { // for worker
-      SpeWorkerProcess();
+      spe_worker_process();
   } else if (res == 1) { // for master
       SpeMasterProcess();
   } else {

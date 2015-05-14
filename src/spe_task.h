@@ -9,12 +9,12 @@
 #include <stdbool.h>
 
 typedef struct spe_task_s {
-  spe_handler_t     handler;
-  struct rb_node    timer_node;
-  struct list_head  task_node;
-  unsigned          expire;
-  unsigned          status:6;
-  unsigned          fast:1;
+  spe_handler_t     _handler;
+  struct rb_node    _timer_node;
+  struct list_head  _task_node;
+  unsigned          _expire;
+  unsigned          _status:6;
+  unsigned          _fast:1;
   unsigned          timeout:1;
 } spe_task_t __attribute__((aligned(sizeof(long))));
 
@@ -24,18 +24,12 @@ spe_task_init(spe_task_t* task);
 static inline void
 spe_task_set_handler(spe_task_t* task, spe_handler_t handler, unsigned fast) {
   ASSERT(task);
-  task->handler = handler;
-  task->fast    = fast;
+  task->_handler = handler;
+  task->_fast    = fast;
 }
 
 extern bool
-spe_task_empty();
-
-static inline bool
-spe_task_timeout(spe_task_t* task) {
-  ASSERT(task);
-  return task->timeout ? true : false;
-}
+spe_task_empty(void);
 
 extern void
 spe_task_schedule(spe_task_t* task);

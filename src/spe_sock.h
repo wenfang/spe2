@@ -7,29 +7,32 @@
 #include <sys/socket.h>
 
 extern int  
-SpeSockAccept(int fd);
+spe_sock_accept(int fd);
 
 extern int  
-SpeSockAcceptTimeout(int fd, int timeout);
+spe_sock_accept_timeout(int fd, int timeout);
 
 extern bool 
-SpeSockSetBlock(int fd, int block);
+spe_sock_set_block(int fd, int block);
 
 extern int  
-SpeSockTcpServer(const char* addr, int port);
+spe_sock_tcp_server(const char* addr, int port);
+
+extern int
+spe_sock_udp_server(const char* addr, int port);
 
 static inline int 
-SpeSockTcpSocket() {
+spe_sock_tcp_socket(void) {
   return socket(AF_INET, SOCK_STREAM, 0);
 }
 
 static inline int 
-SpeSockUdpSocket() {
+spe_sock_udp_socket(void) {
   return socket(AF_INET, SOCK_DGRAM, 0);
 }
 
 static inline int 
-SpeSockClose(int fd) {
+spe_sock_close(int fd) {
   return close(fd);
 }
 

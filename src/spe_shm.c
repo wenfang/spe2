@@ -7,35 +7,35 @@
 
 /*
 ===================================================================================================
-SpeShmCreate
+spe_shm_create
 ===================================================================================================
 */
-speShm_t*
-SpeShmCreate(unsigned size) {
-  speShm_t* shm = calloc(1, sizeof(speShm_t));
+spe_shm_t*
+spe_shm_create(unsigned size) {
+  spe_shm_t* shm = calloc(1, sizeof(spe_shm_t));
   if (!shm) {
     SPE_LOG_ERR("spe shm calloc error");
     return NULL;
   }
-  shm->addr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_ANON|MAP_SHARED, -1, 0);
-  if (!shm->addr) {
+  shm->_addr = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_ANON|MAP_SHARED, -1, 0);
+  if (!shm->_addr) {
     SPE_LOG_ERR("spe shm alloc mmap error");
     free(shm);
     return NULL; 
   } 
-  shm->size = size;
+  shm->_size = size;
   return shm;
 }
 
 /*
 ===================================================================================================
-SpeShmDestroy
+spe_shm_destroy
 ===================================================================================================
 */
 void
-SpeShmDestroy(speShm_t* shm) {
+spe_shm_destroy(spe_shm_t* shm) {
   ASSERT(shm);
-  if (munmap(shm->addr, shm->size) == -1) {
+  if (munmap(shm->_addr, shm->_size) == -1) {
     SPE_LOG_ERR("spe shm munmap error");
   }
   free(shm);
@@ -43,15 +43,15 @@ SpeShmDestroy(speShm_t* shm) {
 
 /*
 ===================================================================================================
-SpeShmMutexCreate
+spe_shm_mutex_create
 ===================================================================================================
 */
 pthread_mutex_t*
-SpeShmMutexCreate() {
+spe_shm_mutex_create(void) {
   pthread_mutex_t* shmux = mmap(NULL, sizeof(pthread_mutex_t), PROT_READ|PROT_WRITE,
       MAP_ANON|MAP_SHARED, -1, 0);
   if (!shmux) {
-    SPE_LOG_ERR("SpeShmMutexCreate mmap error");
+    SPE_LOG_ERR("spe_shm_mutex_create mmap error");
     return NULL;
   }
   pthread_mutexattr_t mattr;
@@ -63,11 +63,11 @@ SpeShmMutexCreate() {
 
 /*
 ===================================================================================================
-SpeShmMutexDestroy
+spe_shm_mutex_destroy
 ===================================================================================================
 */
 void
-SpeShmMutexDestroy(pthread_mutex_t* shmux) {
+spe_shm_mutex_destroy(pthread_mutex_t* shmux) {
   ASSERT(shmux);
   pthread_mutex_destroy(shmux);
   if (munmap(shmux, sizeof(pthread_mutex_t)) == -1) {

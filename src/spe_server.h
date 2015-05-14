@@ -5,23 +5,23 @@
 #include "spe_module.h"
 #include <stdbool.h>
 
-typedef void (*spe_server_handler)(speConn_t*, void*);
+typedef void (*spe_server_handler)(spe_conn_t*, void*);
 
 typedef struct spe_server_s {
-  unsigned            sfd;
-  spe_server_handler  handler;
-  void                *arg;
-  spe_task_t          listen_task;
-  pthread_mutex_t     *acceptMutex;
-  unsigned            acceptMutexHold;
-  struct list_head    serverNode;
+  unsigned            _sfd;
+  spe_server_handler  _handler;
+  void*               _arg;
+  spe_task_t          _listen_task;
+  pthread_mutex_t*    _accept_mutex;
+  unsigned            _accept_mutex_hold;
+  struct list_head    _server_node;
 } spe_server_t __attribute__((aligned(sizeof(long))));
 
 extern void
-SpeServerPreLoop();
+spe_server_preloop(void);
 
 extern void
-SpeServerPostLoop();
+spe_server_postloop(void);
 
 extern spe_server_t*
 spe_server_register(const char* addr, int port, spe_server_handler handler, void* arg);

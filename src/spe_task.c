@@ -19,12 +19,12 @@ spe_task_init
 void
 spe_task_init(spe_task_t* task) {
   ASSERT(task);
-  task->handler = SPE_HANDLER_NULL;
-  task->expire  = 0;
-  rb_init_node(&task->timer_node);
-  INIT_LIST_HEAD(&task->task_node);
-  task->fast    = 0;
-  task->status  = SPE_TASK_FREE;
+  task->_handler = SPE_HANDLER_NULL;
+  task->_expire  = 0;
+  rb_init_node(&task->_timer_node);
+  INIT_LIST_HEAD(&task->_task_node);
+  task->_fast   = 0;
+  task->_status = SPE_TASK_FREE;
   task->timeout = 0;
 }
 
@@ -34,7 +34,7 @@ spe_task_empty
 ===================================================================================================
 */
 bool
-spe_task_empty() {
+spe_task_empty(void) {
   return list_empty(&task_head) ? true : false;
 }
 
@@ -46,18 +46,18 @@ spe_task_schedule
 void
 spe_task_schedule(spe_task_t* task) {
   ASSERT(task);
-  if (task->status == SPE_TASK_QUEUE) return;
-  if (task->status == SPE_TASK_TIMER) {
-    rb_erase(&task->timer_node, &timer_head);
-    rb_init_node(&task->timer_node);
+  if (task->_status == SPE_TASK_QUEUE) return;
+  if (task->_status == SPE_TASK_TIMER) {
+    rb_erase(&task->_timer_node, &timer_head);
+    rb_init_node(&task->_timer_node);
   }
-  if (unlikely(task->fast)) {
-    task->status = SPE_TASK_FREE;
-    SPE_HANDLER_CALL(task->handler);
+  if (unlikely(task->_fast)) {
+    task->_status = SPE_TASK_FREE;
+    SPE_HANDLER_CALL(task->_handler);
     return;
   }
-  list_add_tail(&task->task_node, &task_head);
-  task->status = SPE_TASK_QUEUE;
+  list_add_tail(&task->_task_node, &task_head);
+  task->_status = SPE_TASK_QUEUE;
 }
 
 /*
@@ -68,26 +68,26 @@ spe_task_schedule_timeout
 void
 spe_task_schedule_timeout(spe_task_t* task, unsigned long ms) {
   ASSERT(task);
-  if (task->status == SPE_TASK_QUEUE) return;
-  if (task->status == SPE_TASK_TIMER) {
-    rb_erase(&task->timer_node, &timer_head);
-    rb_init_node(&task->timer_node);
+  if (task->_status == SPE_TASK_QUEUE) return;
+  if (task->_status == SPE_TASK_TIMER) {
+    rb_erase(&task->_timer_node, &timer_head);
+    rb_init_node(&task->_timer_node);
   }
-  task->expire  = spe_current_time() + ms;
+  task->_expire  = spe_current_time() + ms;
   task->timeout = 0;
   struct rb_node **new = &timer_head.rb_node, *parent = NULL;
   while (*new) {
-    spe_task_t* curr = rb_entry(*new, spe_task_t, timer_node);
+    spe_task_t* curr = rb_entry(*new, spe_task_t, _timer_node);
     parent = *new;
-    if (task->expire < curr->expire) {
+    if (task->_expire < curr->_expire) {
       new = &((*new)->rb_left);
     } else {
       new = &((*new)->rb_right);
     }
   }
-  rb_link_node(&task->timer_node, parent, new);
-  rb_insert_color(&task->timer_node, &timer_head);
-  task->status = SPE_TASK_TIMER;
+  rb_link_node(&task->_timer_node, parent, new);
+  rb_insert_color(&task->_timer_node, &timer_head);
+  task->_status = SPE_TASK_TIMER;
 }
 
 /*
@@ -98,14 +98,14 @@ spe_task_dequeue
 void
 spe_task_dequeue(spe_task_t* task) {
   ASSERT(task);
-  if (task->status == SPE_TASK_FREE) return;
-  if (task->status == SPE_TASK_QUEUE) {
-    list_del_init(&task->task_node);
-  } else if (task->status == SPE_TASK_TIMER) {
-    rb_erase(&task->timer_node, &timer_head);
-    rb_init_node(&task->timer_node);
+  if (task->_status == SPE_TASK_FREE) return;
+  if (task->_status == SPE_TASK_QUEUE) {
+    list_del_init(&task->_task_node);
+  } else if (task->_status == SPE_TASK_TIMER) {
+    rb_erase(&task->_timer_node, &timer_head);
+    rb_init_node(&task->_timer_node);
   }
-  task->status = SPE_TASK_FREE;
+  task->_status = SPE_TASK_FREE;
 }
 
 /*
@@ -121,26 +121,26 @@ spe_task_process(void) {
     // check timer list
     struct rb_node* first = rb_first(&timer_head);
     while (first) {
-      spe_task_t* task = rb_entry(first, spe_task_t, timer_node);
-      if (task->expire > curr_time) break;
-      ASSERT(task->status == SPE_TASK_TIMER);
-      rb_erase(&task->timer_node, &timer_head);
-      rb_init_node(&task->timer_node);
+      spe_task_t* task = rb_entry(first, spe_task_t, _timer_node);
+      if (task->_expire > curr_time) break;
+      ASSERT(task->_status == SPE_TASK_TIMER);
+      rb_erase(&task->_timer_node, &timer_head);
+      rb_init_node(&task->_timer_node);
       task->timeout = 1;
       // add to task queue
-      list_add_tail(&task->task_node, &task_head);
-      task->status = SPE_TASK_QUEUE;
+      list_add_tail(&task->_task_node, &task_head);
+      task->_status = SPE_TASK_QUEUE;
       first = rb_first(&timer_head);
     } 
   }
   // run task
   while (!list_empty(&task_head)) {
-    spe_task_t* task = list_first_entry(&task_head, spe_task_t, task_node);
+    spe_task_t* task = list_first_entry(&task_head, spe_task_t, _task_node);
     if (!task) break;
-    ASSERT(task->status == SPE_TASK_QUEUE);
-    list_del_init(&task->task_node);
-    task->status = SPE_TASK_FREE;
-    SPE_HANDLER_CALL(task->handler);
+    ASSERT(task->_status == SPE_TASK_QUEUE);
+    list_del_init(&task->_task_node);
+    task->_status = SPE_TASK_FREE;
+    SPE_HANDLER_CALL(task->_handler);
   }
 }
 

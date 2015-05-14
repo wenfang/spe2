@@ -3,21 +3,21 @@
 
 #include <pthread.h>
 
-typedef struct {
-  void*     addr;
-  unsigned  size;
-} speShm_t;
+typedef struct spe_shm_s {
+  void*     _addr;
+  unsigned  _size;
+} spe_shm_t;
 
-extern speShm_t*
-SpeShmCreate(unsigned size);
+extern spe_shm_t*
+spe_shm_create(unsigned size);
 
 extern void
-SpeShmDestroy(speShm_t* shm);
+spe_shm_destroy(spe_shm_t* shm);
 
 extern pthread_mutex_t*
-SpeShmMutexCreate();
+spe_shm_mutex_create(void);
 
 extern void
-SpeShmMutexDestroy(pthread_mutex_t* shmux);
+spe_shm_mutex_destroy(pthread_mutex_t* shmux);
 
 #endif

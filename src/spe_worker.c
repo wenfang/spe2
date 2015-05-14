@@ -139,9 +139,9 @@ spe_worker_process(void) {
   unsigned timeout = 300;
   while (!worker_stop) {
     if (spe_task_empty()) timeout = 0;
-    SpeServerPreLoop();
+    spe_server_preloop();
     spe_epoll_process(timeout);
-    SpeServerPostLoop();
+    spe_server_postloop();
     spe_task_process();
     spe_signal_process();
   }

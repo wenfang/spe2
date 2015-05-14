@@ -14,31 +14,31 @@
 
 #define DEFAULT_BACKLOG	10240
 
-static bool
-sockAddrValid(const char* addr) {
+static bool 
+sock_addr_valid(const char* addr) {
   if (!addr) return false;
-  int dotCnt = 0;
+  int dot_cnt = 0;
   int addrLen = strlen(addr);
   for (int i=0; i<addrLen; i++) {
     if (addr[i] >='0' && addr[i]<='9') continue;
     if (addr[i] == '.') {
-      dotCnt++;
+      dot_cnt++;
       continue;
     }
     return false;
   }
-  if (dotCnt != 3) return false;
+  if (dot_cnt != 3) return false;
   return true;
 }
 
 /*
 ===================================================================================================
-SpeSockTcpServer
+spe_sock_tcp_server
     create tcpserver and listen 
 ===================================================================================================
 */
 int 
-SpeSockTcpServer(const char* addr, int port) {
+spe_sock_tcp_server(const char* addr, int port) {
   int sfd;
   if ((sfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) return -1;
   //set socket option
@@ -52,8 +52,9 @@ SpeSockTcpServer(const char* addr, int port) {
   if (setsockopt(sfd, SOL_SOCKET, SO_LINGER, (void*)&ling, sizeof(ling)) < 0) goto error_out;
   //set socket address
   struct sockaddr_in saddr;
+  bzero(&saddr, sizeof(saddr));
   saddr.sin_family = AF_INET;
-  if (sockAddrValid(addr)) {
+  if (sock_addr_valid(addr)) {
     if (inet_aton(addr, &saddr.sin_addr) == 0) goto error_out;
   } else {
     saddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -65,17 +66,45 @@ SpeSockTcpServer(const char* addr, int port) {
   return sfd;
 
 error_out:
-  SpeSockClose(sfd);
+  spe_sock_close(sfd);
   return -1;
 }
 
 /*
 ===================================================================================================
-SpeSockAccpet
+spe_sock_udp_server
 ===================================================================================================
 */
 int 
-SpeSockAccept(int sfd) {
+spe_sock_udp_server(const char* addr, int port) {
+  int sfd;
+  if ((sfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) return -1;
+
+  struct sockaddr_in saddr;
+  bzero(&saddr, sizeof(saddr));
+  saddr.sin_family = AF_INET;
+  if (sock_addr_valid(addr)) {
+    if (inet_aton(addr, &saddr.sin_addr) == 0) goto error_out;
+  } else {
+    saddr.sin_addr.s_addr = htonl(INADDR_ANY);
+  }
+  saddr.sin_port = htons(port);
+
+  if (bind(sfd, (struct sockaddr *)&saddr, sizeof(saddr)) != 0) goto error_out;
+  return sfd;
+
+error_out:
+  spe_sock_close(sfd);
+  return -1;
+}
+
+/*
+===================================================================================================
+spe_sock_accpet
+===================================================================================================
+*/
+int 
+spe_sock_accept(int sfd) {
   struct sockaddr_in caddr;
   socklen_t caddr_len = 0;
   bzero(&caddr, sizeof(caddr));
@@ -84,11 +113,11 @@ SpeSockAccept(int sfd) {
 
 /*
 ===================================================================================================
-SpeSockAcceptTimeout
+spe_sock_acceptTimeout
 ===================================================================================================
 */
 int 
-SpeSockAcceptTimeout(int sfd, int timeout) {
+spe_sock_accept_timeout(int sfd, int timeout) {
   struct sockaddr_in caddr;
   socklen_t caddr_len = 0;
   bzero(&caddr, sizeof(caddr));
@@ -116,12 +145,12 @@ SpeSockAcceptTimeout(int sfd, int timeout) {
 
 /*
 ===================================================================================================
-SpeSockSetBlock
+spe_sock_set_block
     set socket to block
 ===================================================================================================
 */
 bool 
-SpeSockSetBlock(int fd, int block) {
+spe_sock_set_block(int fd, int block) {
   int flags;
   if ((flags = fcntl(fd, F_GETFL, 0)) < 0) return false;
   // set new flags;
