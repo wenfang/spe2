@@ -16,11 +16,14 @@ typedef struct spe_io_s {
   unsigned    _error:1;
 } spe_io_t;
 
-extern int  
-spe_io_read(spe_io_t* io, unsigned len, spe_buf_t *buf);
+extern int
+spe_io_read(spe_io_t* io, spe_buf_t *buf);
 
 extern int  
-spe_io_read_until(spe_io_t* io, const char* delim, spe_buf_t *buf);
+spe_io_readbytes(spe_io_t* io, unsigned len, spe_buf_t *buf);
+
+extern int  
+spe_io_readuntil(spe_io_t* io, const char* delim, spe_buf_t *buf);
 
 extern int
 spe_io_write(spe_io_t* io, spe_buf_t *buf);

@@ -6,7 +6,7 @@ int main() {
   spe_buf_t* buf = spe_buf_create();
 
   for (;;) {
-    int rc = spe_io_read_until(io, "t", buf);
+    int rc = spe_io_readuntil(io, "t", buf);
     printf("rc: %d\n", rc);
     if (buf->len) printf("%s\n", buf->data);
     spe_buf_clean(buf);

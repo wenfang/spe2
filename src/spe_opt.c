@@ -95,7 +95,7 @@ spe_opt_create(const char* config_file) {
   int res = 1;
   while (res > 0) {
     // get one line from file
-    res = spe_io_read_until(io, "\n", line);
+    res = spe_io_readuntil(io, "\n", line);
     spe_buf_strim(line, " \r\t\n");
     if (line->len == 0 || line->data[0] == '#') continue;
     // section line, get section

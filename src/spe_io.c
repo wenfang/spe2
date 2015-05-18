@@ -8,9 +8,10 @@
 
 #define BUF_LEN 4096
 
-#define SPE_IO_READNONE   0
-#define SPE_IO_READ       1
-#define SPE_IO_READUNTIL  2
+#define SPE_IO_READNONE     0
+#define SPE_IO_READ         1
+#define SPE_IO_READBYTES    2
+#define SPE_IO_READUNTIL    3
 
 /*
 ===================================================================================================
@@ -22,6 +23,14 @@ read_common(spe_io_t* io, spe_buf_t *buf) {
   int res;
   for (;;) {
     if (io->_rtype == SPE_IO_READ) {
+      if (io->_read_buffer->len > 0) {
+        unsigned len = io->_read_buffer->len;
+        spe_buf_append(buf, io->_read_buffer->data, io->_read_buffer->len);
+        spe_buf_clean(io->_read_buffer);
+        io->_rtype = SPE_IO_READNONE;
+        return len;
+      }
+    } else if (io->_rtype == SPE_IO_READBYTES) {
       if (io->_rbytes <= io->_read_buffer->len) {
         spe_buf_append(buf, io->_read_buffer->data, io->_rbytes);
         spe_buf_lconsume(io->_read_buffer, io->_rbytes);
@@ -62,22 +71,36 @@ spe_io_read
 ===================================================================================================
 */
 int 
-spe_io_read(spe_io_t* io, unsigned len, spe_buf_t *buf) {
-  ASSERT(io && len && buf);
+spe_io_read(spe_io_t* io, spe_buf_t *buf) {
+  ASSERT(io && buf);
   if (io->_closed) return SPE_IO_CLOSED;
   if (io->_error) return SPE_IO_ERROR;
   io->_rtype  = SPE_IO_READ;
+  return read_common(io, buf);
+}
+
+/*
+===================================================================================================
+spe_io_readbytes
+===================================================================================================
+*/
+int 
+spe_io_readbytes(spe_io_t* io, unsigned len, spe_buf_t *buf) {
+  ASSERT(io && len && buf);
+  if (io->_closed) return SPE_IO_CLOSED;
+  if (io->_error) return SPE_IO_ERROR;
+  io->_rtype  = SPE_IO_READBYTES;
   io->_rbytes = len;
   return read_common(io, buf);
 }
 
 /*
 ===================================================================================================
-spe_io_read_until
+spe_io_readuntil
 ===================================================================================================
 */
 int 
-spe_io_read_until(spe_io_t* io, const char* delim, spe_buf_t *buf) {  
+spe_io_readuntil(spe_io_t* io, const char* delim, spe_buf_t *buf) {  
   ASSERT(io && delim);
   if (io->_closed) return SPE_IO_CLOSED;
   if (io->_error) return SPE_IO_ERROR;
@@ -95,17 +118,17 @@ int
 spe_io_write(spe_io_t* io, spe_buf_t *buf) {
   ASSERT(io && buf);
   if (io->_closed || io->_error) return SPE_IO_ERROR;
-  int totalWrite = 0;
-  while (totalWrite < buf->len) {
-    int res = write(io->_fd, buf->data+totalWrite, buf->len-totalWrite);
+  int total_write = 0;
+  while (total_write < buf->len) {
+    int res = write(io->_fd, buf->data+total_write, buf->len-total_write);
     if (res < 0) {
       if (errno == EINTR) continue;
       io->_error = 1;
       break;
     }
-    totalWrite += res;
+    total_write += res;
   }
-  return totalWrite;
+  return total_write;
 }
 
 /*
@@ -144,7 +167,6 @@ spe_io_create_fd(int fd) {
   io->_fd          = fd;
   io->_read_buffer = spe_buf_create();
   if (io->_read_buffer == NULL) {
-    spe_buf_destroy(io->_read_buffer);
     free(io);
     return NULL;
   }

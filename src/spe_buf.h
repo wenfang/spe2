@@ -7,7 +7,6 @@
 #include <string.h>
 
 #define SPE_BUF_ERROR   -2
-#define SPE_BUF_EAGAIN  -3
 
 typedef struct spe_buf_s {
   char*     data;
@@ -43,6 +42,13 @@ spe_buf_lstrim(spe_buf_t* buf, char* token);
 extern void
 spe_buf_rstrim(spe_buf_t* buf, char* token);
 
+static inline void 
+spe_buf_strim(spe_buf_t* buf, char* token) {
+  ASSERT(buf && token);
+  spe_buf_lstrim(buf, token);
+  spe_buf_rstrim(buf, token);
+}
+
 extern int
 spe_buf_cmp(spe_buf_t* buf1, spe_buf_t* buf2);
 
@@ -64,13 +70,6 @@ spe_buf_clean(spe_buf_t* buf) {
   buf->data = buf->_start;
   buf->len  = 0;
   if (buf->_size) buf->data[0] = 0;
-}
-
-static inline void 
-spe_buf_strim(spe_buf_t* buf, char* token) {
-  ASSERT(buf && token);
-  spe_buf_lstrim(buf, token);
-  spe_buf_rstrim(buf, token);
 }
 
 static inline spe_buf_t*
