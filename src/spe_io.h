@@ -8,7 +8,7 @@
 
 typedef struct spe_io_s {
   spe_buf_t*  _read_buffer;
-  unsigned    _fd;
+  int         _fd;
   const char* _delim;
   unsigned    _rbytes;
   unsigned    _rtype:2;
