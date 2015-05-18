@@ -16,7 +16,7 @@ static void stop_worker(int sig) {
 }
 
 static void
-SpeMasterProcess() {
+spe_master_process() {
   spe_save_pid(cycle.pidfile);
 	spe_set_proc_title("spe: master");
 
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < spe_module_num; i++) {
     if (spe_modules[i]->module_type != SPE_CORE_MODULE) continue;
     if (spe_modules[i]->init_master && !spe_modules[i]->init_master(&cycle)) {
-      SPE_LOG_ERR("core module init_master Error");
+      SPE_LOG_ERR("core module init_master");
       return 1;
     }
   }
@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < spe_module_num; i++) {
     if (spe_modules[i]->module_type != SPE_USER_MODULE) continue;
     if (spe_modules[i]->init_master && !spe_modules[i]->init_master(&cycle)) {
-      SPE_LOG_ERR("user module init_master Error");
+      SPE_LOG_ERR("user module init_master");
       return 1;
     }
   }
@@ -120,22 +120,22 @@ int main(int argc, char* argv[]) {
   if (res == 0) { // for worker
       spe_worker_process();
   } else if (res == 1) { // for master
-      SpeMasterProcess();
+      spe_master_process();
   } else {
-    fprintf(stderr, "[ERROR] SpeProcessFork Error\n");
+    fprintf(stderr, "[ERROR] spe_worker_fork\n");
   }
   // exit user module
   for (int i = spe_module_num - 1; i >= 0; i--) {
     if (spe_modules[i]->module_type != SPE_USER_MODULE) continue;
     if (spe_modules[i]->exit_master && !spe_modules[i]->exit_master(&cycle)) {
-      SPE_LOG_ERR("user module exit_master Error");
+      SPE_LOG_ERR("user module exit_master");
     }
   }
   // exit core module
   for (int i = spe_module_num - 1; i >= 0; i--) {
     if (spe_modules[i]->module_type != SPE_CORE_MODULE) continue;
     if (spe_modules[i]->exit_master && !spe_modules[i]->exit_master(&cycle)) {
-      SPE_LOG_ERR("core module exit_master Error");
+      SPE_LOG_ERR("core module exit_master");
     }
   }
   // destroy speOpt
