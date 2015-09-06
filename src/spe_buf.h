@@ -84,6 +84,12 @@ spe_buf_destroy(spe_buf_t* buf) {
   free(buf);
 }
 
+static inline void
+spe_buf_free(spe_buf_t* buf) {
+  if (buf == NULL) return;
+  free(buf->_start);
+}
+
 extern spe_bufs_t* 
 spe_buf_split(spe_buf_t* buf, const char* token);
 

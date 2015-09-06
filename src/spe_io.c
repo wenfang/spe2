@@ -23,31 +23,31 @@ read_common(spe_io_t* io, spe_buf_t *buf) {
   int res;
   for (;;) {
     if (io->_rtype == SPE_IO_READ) {
-      if (io->_read_buffer->len > 0) {
-        unsigned len = io->_read_buffer->len;
-        spe_buf_append(buf, io->_read_buffer->data, io->_read_buffer->len);
-        spe_buf_clean(io->_read_buffer);
+      if (io->_rbuf->len > 0) {
+        unsigned len = io->_rbuf->len;
+        spe_buf_append(buf, io->_rbuf->data, io->_rbuf->len);
+        spe_buf_clean(io->_rbuf);
         io->_rtype = SPE_IO_READNONE;
         return len;
       }
     } else if (io->_rtype == SPE_IO_READBYTES) {
-      if (io->_rbytes <= io->_read_buffer->len) {
-        spe_buf_append(buf, io->_read_buffer->data, io->_rbytes);
-        spe_buf_lconsume(io->_read_buffer, io->_rbytes);
+      if (io->_rbytes <= io->_rbuf->len) {
+        spe_buf_append(buf, io->_rbuf->data, io->_rbytes);
+        spe_buf_lconsume(io->_rbuf, io->_rbytes);
         io->_rtype = SPE_IO_READNONE;
         return io->_rbytes;
       }
     } else if (io->_rtype == SPE_IO_READUNTIL) {
-      int pos = spe_buf_search(io->_read_buffer, io->_delim);
+      int pos = spe_buf_search(io->_rbuf, io->_delim);
       if (pos != -1) {
         unsigned len = pos + strlen(io->_delim);
-        spe_buf_append(buf, io->_read_buffer->data, len);
-        spe_buf_lconsume(io->_read_buffer, len);
+        spe_buf_append(buf, io->_rbuf->data, len);
+        spe_buf_lconsume(io->_rbuf, len);
         io->_rtype = SPE_IO_READNONE;
         return len;
       }
     }
-    res = spe_buf_read_fd_append(io->_fd, BUF_LEN, io->_read_buffer);
+    res = spe_buf_read_fd_append(io->_fd, BUF_LEN, io->_rbuf);
     if (res < 0) {
       if (errno == EINTR) continue;
       io->_error = 1;
@@ -59,8 +59,8 @@ read_common(spe_io_t* io, spe_buf_t *buf) {
     }
   }
   // read error copy data
-  spe_buf_append(buf, io->_read_buffer->data, io->_read_buffer->len);
-  spe_buf_clean(io->_read_buffer);
+  spe_buf_append(buf, io->_rbuf->data, io->_rbuf->len);
+  spe_buf_clean(io->_rbuf);
   io->_rtype = SPE_IO_READNONE;
   return res;
 }
@@ -146,8 +146,8 @@ spe_io_create(const char* fname) {
     free(io);
     return NULL;
   }
-  io->_read_buffer = spe_buf_create();
-  if (io->_read_buffer == NULL) {
+  io->_rbuf = spe_buf_create();
+  if (io->_rbuf == NULL) {
     spe_io_destroy(io);
     return NULL;
   }
@@ -165,8 +165,8 @@ spe_io_create_fd(int fd) {
   if (io == NULL) return NULL;
 
   io->_fd          = fd;
-  io->_read_buffer = spe_buf_create();
-  if (io->_read_buffer == NULL) {
+  io->_rbuf = spe_buf_create();
+  if (io->_rbuf == NULL) {
     free(io);
     return NULL;
   }
@@ -181,7 +181,7 @@ spe_io_destroy
 void 
 spe_io_destroy(spe_io_t* io) {
   ASSERT(io);
-  spe_buf_destroy(io->_read_buffer);
+  spe_buf_destroy(io->_rbuf);
   close(io->_fd);
   free(io);
 }

@@ -7,7 +7,7 @@
 #define SPE_IO_ERROR  -1
 
 typedef struct spe_io_s {
-  spe_buf_t*  _read_buffer;
+  spe_buf_t*  _rbuf;
   int         _fd;
   const char* _delim;
   unsigned    _rbytes;
